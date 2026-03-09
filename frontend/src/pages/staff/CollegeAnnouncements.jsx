@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, Users, Building2, GraduationCap, Clock, Loader2 } from 'lucide-react';
+import { Bell, Users, GraduationCap, Building2, Clock, Loader2, Megaphone } from 'lucide-react';
 import { announcementAPI } from '../../services/api';
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
-export default function StudentAnnouncements() {
+export default function CollegeAnnouncements() {
     const [loading, setLoading] = useState(true);
     const [announcements, setAnnouncements] = useState([]);
 
@@ -18,7 +18,9 @@ export default function StudentAnnouncements() {
         try {
             const res = await announcementAPI.getAll();
             if (res.announcements) {
-                setAnnouncements(res.announcements);
+                // Filter only global announcements (where department_id is null)
+                const global = res.announcements.filter(a => !a.department_id);
+                setAnnouncements(global);
             }
         } catch (err) {
             console.error('Failed to fetch announcements:', err);
@@ -40,8 +42,8 @@ export default function StudentAnnouncements() {
         return date.toLocaleDateString();
     };
 
-    const targetIcons = { all: Users, student: GraduationCap, department: Building2, staff: Users };
-    const targetColors = { all: '#6366f1', student: '#f59e0b', department: '#06b6d4', staff: '#10b981' };
+    const targetIcons = { all: Users, student: GraduationCap, staff: Users };
+    const targetColors = { all: '#6366f1', student: '#f59e0b', staff: '#10b981' };
 
     if (loading) {
         return (
@@ -55,49 +57,43 @@ export default function StudentAnnouncements() {
         <motion.div variants={containerVariants} initial="hidden" animate="show">
             <motion.div variants={itemVariants} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-md)', background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-500)' }}>
-                    <Bell size={22} />
+                    <Megaphone size={22} />
                 </div>
                 <div>
-                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800 }}>Notices & Alerts</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '2px' }}>{announcements.length} announcements</p>
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800 }}>College Notice Board</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '2px' }}>Global announcements from the Principal & Admin</p>
                 </div>
             </motion.div>
 
             {announcements.length === 0 ? (
                 <motion.div variants={itemVariants} className="card" style={{ marginTop: '28px', textAlign: 'center', padding: '40px' }}>
-                    <Bell size={48} style={{ color: 'var(--text-muted)', margin: '0 auto 16px' }} />
-                    <h3 style={{ fontSize: '18px', fontWeight: 700 }}>No Announcements</h3>
-                    <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>There are no announcements at the moment. Check back later!</p>
+                    <Bell size={48} style={{ color: 'var(--text-muted)', margin: '0 auto 16px', opacity: 0.3 }} />
+                    <h3 style={{ fontSize: '18px', fontWeight: 700 }}>No Global Announcements</h3>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>There are no college-wide notices at the moment.</p>
                 </motion.div>
             ) : (
                 <motion.div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '28px' }}>
-                    {announcements.map((ann, i) => {
-                        const target = ann.target || 'all';
+                    {announcements.map((ann) => {
+                        const target = ann.target_role || 'all';
                         const Icon = targetIcons[target] || Users;
-                        const priority = ann.priority || 'normal';
                         return (
                             <motion.div key={ann.id} className="card" variants={itemVariants}
                                 whileHover={{ x: 4, boxShadow: '0 10px 30px var(--shadow-color)' }}
                                 style={{
-                                    borderLeft: `4px solid ${priority === 'high' ? 'var(--danger-500)' : targetColors[target]}`,
+                                    borderLeft: `4px solid ${targetColors[target] || '#6366f1'}`,
                                     position: 'relative', overflow: 'hidden',
                                 }}>
-                                {priority === 'high' && (
-                                    <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
-                                        <span className="badge badge-danger">Important</span>
-                                    </div>
-                                )}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', paddingRight: priority === 'high' ? '80px' : 0 }}>{ann.title}</h3>
+                                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{ann.title}</h3>
                                 </div>
-                                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '12px' }}>{ann.message || ann.content}</p>
+                                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '12px' }}>{ann.message}</p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <Clock size={12} /> {getTimeAgo(ann.created_at)}
                                     </div>
-                                    {ann.author_name && <span>By {ann.author_name}</span>}
+                                    <span>By <strong>{ann.created_by_name || 'Admin'}</strong></span>
                                     <span className="badge" style={{ background: `${targetColors[target]}15`, color: targetColors[target] }}>
-                                        <Icon size={10} /> {target === 'all' ? 'Everyone' : target}
+                                        <Icon size={10} /> {target === 'all' ? 'Everyone' : target.charAt(0).toUpperCase() + target.slice(1)}
                                     </span>
                                 </div>
                             </motion.div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, GraduationCap, Building2, Bell, TrendingUp, UserPlus, Shield, Activity } from 'lucide-react';
 import { adminAPI, departmentAPI } from '../../services/api';
@@ -14,30 +15,48 @@ const itemVariants = {
 };
 
 export default function AdminDashboard() {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
-        totalStudents: 1247,
-        totalStaff: 86,
-        totalDepartments: 8,
-        activeAlerts: 5,
-        attendanceRate: 87.5,
-        newEnrollments: 34,
+        totalStudents: 0,
+        totalStaff: 0,
+        totalDepartments: 0,
+        activeAlerts: 0,
+        attendanceRate: 0,
+        newEnrollments: 0,
+        pendingApprovals: 0,
     });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
+    const fetchStats = async () => {
+        try {
+            const res = await adminAPI.getStats();
+            // The backend returns { totalStudents, totalStaff, totalDepartments, activeAlerts, attendanceRate, pendingApprovals }
+            setStats(prev => ({
+                ...prev,
+                ...res
+            }));
+        } catch (err) {
+            console.error('Failed to fetch stats:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const statCards = [
-        { label: 'Total Students', value: stats.totalStudents, icon: GraduationCap, color: '#6366f1', change: '+12%' },
-        { label: 'Total Staff', value: stats.totalStaff, icon: Users, color: '#8b5cf6', change: '+3%' },
-        { label: 'Departments', value: stats.totalDepartments, icon: Building2, color: '#06b6d4', change: '0' },
-        { label: 'Active Alerts', value: stats.activeAlerts, icon: Bell, color: '#f59e0b', change: '-2' },
-        { label: 'Attendance Rate', value: `${stats.attendanceRate}%`, icon: TrendingUp, color: '#10b981', change: '+1.2%' },
-        { label: 'New Enrollments', value: stats.newEnrollments, icon: UserPlus, color: '#ec4899', change: '+8' },
+        { label: 'Total Students', value: stats.totalStudents, icon: GraduationCap, color: '#6366f1', change: stats.totalStudents > 0 ? '+100%' : '0%', path: '/admin/students' },
+        { label: 'Total Staff', value: stats.totalStaff, icon: Users, color: '#8b5cf6', change: stats.totalStaff > 0 ? '+100%' : '0%', path: '/admin/staff' },
+        { label: 'Departments', value: stats.totalDepartments, icon: Building2, color: '#06b6d4', change: '0', path: '/admin/departments' },
+        { label: 'Pending Approvals', value: stats.pendingApprovals, icon: UserPlus, color: stats.pendingApprovals > 0 ? '#ef4444' : '#6366f1', change: stats.pendingApprovals > 0 ? 'Action Required' : 'Up to date', path: '/admin/students', state: { initialTab: 'pending' } },
+        { label: 'Attendance Rate', value: `${stats.attendanceRate}%`, icon: TrendingUp, color: '#10b981', change: '0%' },
     ];
 
     const recentActivity = [
-        { action: 'New staff added', detail: 'Dr. Priya Sharma - CSE Department', time: '10 min ago', type: 'success' },
-        { action: 'Student archived', detail: 'Reg No: CSE2023045', time: '1 hour ago', type: 'warning' },
-        { action: 'Marks uploaded', detail: 'Internal Marks - ECE 3rd Year', time: '2 hours ago', type: 'info' },
-        { action: 'Attendance alert', detail: '15 students below 75% in CSE', time: '3 hours ago', type: 'danger' },
-        { action: 'System backup', detail: 'Automated backup completed', time: 'Yesterday', type: 'success' },
+        { action: 'Dashboard Updated', detail: 'Stats synchronized with database', time: 'Just now', type: 'success' },
+        { action: 'System running', detail: 'Cloudflare Worker & D1 connected', time: 'Online', type: 'info' },
     ];
 
     return (
@@ -77,7 +96,8 @@ export default function AdminDashboard() {
                             className="stat-card"
                             variants={itemVariants}
                             whileHover={{ y: -4, boxShadow: '0 20px 40px var(--shadow-color)' }}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: card.path ? 'pointer' : 'default' }}
+                            onClick={() => card.path && navigate(card.path, { state: card.state })}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div>

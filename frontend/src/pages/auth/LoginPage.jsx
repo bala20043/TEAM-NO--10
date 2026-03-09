@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,10 +19,10 @@ export default function LoginPage() {
   // Demo accounts for testing
   const demoAccounts = [
     { role: 'admin', email: 'admin@college.edu', password: 'admin123', icon: '🛠', color: '#6366f1' },
-    { role: 'principal', email: 'principal@college.edu', password: 'principal123', icon: '👨‍💼', color: '#8b5cf6' },
-    { role: 'hod', email: 'hod@college.edu', password: 'hod123', icon: '🧑‍💼', color: '#06b6d4' },
-    { role: 'staff', email: 'staff@college.edu', password: 'staff123', icon: '👩‍🏫', color: '#10b981' },
-    { role: 'student', email: 'student@college.edu', password: 'student123', icon: '👨‍🎓', color: '#f59e0b' },
+    { role: 'principal', email: 'principal@college.edu', password: 'password123', icon: '👨‍💼', color: '#8b5cf6' },
+    { role: 'hod', email: 'hod@college.edu', password: 'password123', icon: '🧑‍💼', color: '#06b6d4' },
+    { role: 'staff', email: 'staff@college.edu', password: 'password123', icon: '👩‍🏫', color: '#10b981' },
+    { role: 'student', email: 'student@college.edu', password: 'password123', icon: '👨‍🎓', color: '#f59e0b' },
   ];
 
   const handleSubmit = async (e) => {
@@ -32,17 +32,9 @@ export default function LoginPage() {
 
     try {
       const result = await login(email, password);
-      if (result.success) {
-        // Navigate based on role from JWT
-        const token = localStorage.getItem('token');
-        if (token) {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const role = payload.role;
-          if (role === 'admin') navigate('/admin');
-          else if (['principal', 'hod', 'staff'].includes(role)) navigate('/staff');
-          else navigate('/student');
-        }
-      } else {
+      // Wait for the AuthContext onAuthStateChange to fetch the profile and update the user state.
+      // We will handle navigation in a useEffect based on the `user` state.
+      if (!result.success) {
         setError(result.error || 'Invalid credentials');
       }
     } catch (err) {
@@ -50,6 +42,17 @@ export default function LoginPage() {
     }
     setLoading(false);
   };
+
+  // Listen for user role changes to navigate
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') navigate('/admin');
+      else if (['principal', 'hod', 'staff'].includes(user.role)) navigate('/staff');
+      else navigate('/student');
+    }
+  }, [user, navigate]);
 
   const fillDemo = (account) => {
     setEmail(account.email);
@@ -205,6 +208,12 @@ export default function LoginPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              <div className="login-links" style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
+                <Link to="/register" style={{ fontSize: '14px', color: 'var(--primary-500)', fontWeight: 600, textDecoration: 'none' }}>
+                  New Student? Register here
+                </Link>
+              </div>
 
               <motion.button
                 type="submit"

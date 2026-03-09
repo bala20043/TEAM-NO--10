@@ -1,33 +1,95 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardList, Check, X, Save, Calendar, Building2 } from 'lucide-react';
+import { ClipboardList, Check, X, Save, Calendar, Building2, Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { studentAPI, attendanceAPI, departmentAPI } from '../../services/api';
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 export default function TakeAttendance() {
+    const { user } = useAuth();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [selectedDept, setSelectedDept] = useState('CSE');
-    const [selectedYear, setSelectedYear] = useState('2');
+    const [selectedDept, setSelectedDept] = useState(user?.department_id || '');
+    const [selectedYear, setSelectedYear] = useState(user?.year || '1');
+    const [departments, setDepartments] = useState([]);
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [apiError, setApiError] = useState('');
 
-    const [students, setStudents] = useState([
-        { id: 1, name: 'Arun Kumar', reg_no: 'CSE2024001', status: null },
-        { id: 2, name: 'Deepa Lakshmi', reg_no: 'CSE2024002', status: null },
-        { id: 3, name: 'Karthik Raj', reg_no: 'CSE2024003', status: null },
-        { id: 4, name: 'Sneha Patel', reg_no: 'CSE2024004', status: null },
-        { id: 5, name: 'Ravi Shankar', reg_no: 'CSE2024005', status: null },
-        { id: 6, name: 'Meera Nair', reg_no: 'CSE2024006', status: null },
-        { id: 7, name: 'Vikram Das', reg_no: 'CSE2024007', status: null },
-        { id: 8, name: 'Priya Mohan', reg_no: 'CSE2024008', status: null },
-    ]);
+    const isClassTeacher = !!(user?.department_id && user?.year);
+
+    useEffect(() => {
+        fetchDepartments();
+    }, []);
+
+    useEffect(() => {
+        fetchStudents();
+    }, [selectedDept, selectedYear, selectedDate]);
+
+    const fetchDepartments = async () => {
+        try {
+            const res = await departmentAPI.getAll();
+            if (res.departments) setDepartments(res.departments);
+        } catch (err) { console.error(err); }
+    };
+
+    const fetchStudents = async () => {
+        if (!selectedDept || !selectedYear) return;
+        setLoading(true);
+        try {
+            // Fetch students and their attendance for the date
+            // Fix: Pass deptId and year as separate params to studentAPI.getAll
+            const [studentRes, attendanceRes] = await Promise.all([
+                studentAPI.getAll(selectedDept, selectedYear),
+                attendanceAPI.getDeptAttendance(selectedDept, selectedDate, selectedYear)
+            ]);
+
+            if (studentRes.students) {
+                const combined = studentRes.students.map(s => {
+                    const status = attendanceRes.students?.find(a => a.student_id === s.id)?.status;
+                    return { ...s, status: status || null };
+                });
+                setStudents(combined);
+            }
+        } catch (err) {
+            setApiError('Failed to fetch students');
+        }
+        setLoading(false);
+    };
+
+    if (!user?.department_id || !user?.year) {
+        return (
+            <div className="card" style={{ padding: '40px', textAlign: 'center', marginTop: '24px' }}>
+                <ClipboardList size={48} style={{ color: 'var(--text-muted)', margin: '0 auto 16px' }} />
+                <h3 style={{ fontSize: '20px', fontWeight: 700 }}>No Class Assigned</h3>
+                <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '8px auto 0' }}>
+                    You are not currently assigned to a class. Please contact the administrator to assign you as a Class Teacher.
+                </p>
+            </div>
+        );
+    }
 
     const markAll = (status) => setStudents(prev => prev.map(s => ({ ...s, status })));
     const toggleStudent = (id) => setStudents(prev => prev.map(s => s.id === id ? { ...s, status: s.status === 'present' ? 'absent' : 'present' } : s));
 
-    const handleSave = () => {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+    const handleSave = async () => {
+        const records = students
+            .filter(s => s.status)
+            .map(s => ({ student_id: s.id, date: selectedDate, status: s.status }));
+
+        if (records.length === 0) return;
+
+        setLoading(true);
+        try {
+            await attendanceAPI.markBulk(records);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } catch (err) {
+            setApiError('Failed to save attendance');
+        }
+        setLoading(false);
     };
 
     const presentCount = students.filter(s => s.status === 'present').length;
@@ -48,16 +110,31 @@ export default function TakeAttendance() {
                 </div>
                 <div>
                     <label className="input-label">Department</label>
-                    <select className="input-field" value={selectedDept} onChange={e => setSelectedDept(e.target.value)} style={{ width: '180px' }}>
-                        <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MECH">MECH</option><option value="CIVIL">CIVIL</option>
+                    <select className="input-field" value={selectedDept}
+                        onChange={e => setSelectedDept(e.target.value)}
+                        disabled={isClassTeacher}
+                        style={{ width: '180px' }}>
+                        <option value="">Select Dept</option>
+                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                 </div>
                 <div>
                     <label className="input-label">Year</label>
-                    <select className="input-field" value={selectedYear} onChange={e => setSelectedYear(e.target.value)} style={{ width: '120px' }}>
-                        <option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option><option value="4">4th Year</option>
+                    <select className="input-field" value={selectedYear}
+                        onChange={e => setSelectedYear(e.target.value)}
+                        disabled={isClassTeacher}
+                        style={{ width: '120px' }}>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
                     </select>
                 </div>
+                {isClassTeacher && (
+                    <div style={{ alignSelf: 'flex-end', paddingBottom: '10px' }}>
+                        <span className="badge badge-primary">Locked to your assigned class</span>
+                    </div>
+                )}
             </motion.div>
 
             {/* Quick Actions */}
@@ -113,8 +190,9 @@ export default function TakeAttendance() {
 
             {/* Save */}
             <motion.div variants={itemVariants} style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-                <motion.button className="btn btn-primary btn-lg" onClick={handleSave} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                    <Save size={18} /> Save Attendance
+                <motion.button className="btn btn-primary btn-lg" onClick={handleSave} disabled={loading} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                    Save Attendance
                 </motion.button>
             </motion.div>
 

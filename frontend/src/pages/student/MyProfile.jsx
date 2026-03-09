@@ -1,31 +1,69 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, Building2, Calendar, Hash, GraduationCap } from 'lucide-react';
+import { User, Mail, Phone, Building2, Calendar, Hash, GraduationCap, Loader2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { studentAPI } from '../../services/api';
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 export default function MyProfile() {
-    const profile = {
-        name: 'Arun Kumar',
-        reg_no: 'CSE2024001',
-        department: 'Computer Science & Engineering',
-        year: 3,
-        batch: '2022-2026',
-        email: 'arun@college.edu',
-        mobile: '9876543210',
-        parentMobile: '9876543200',
-        status: 'active',
+    const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [profile, setProfile] = useState(null);
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
+    const fetchProfile = async () => {
+        try {
+            const res = await studentAPI.getProfile();
+            if (res.profile) {
+                setProfile(res.profile);
+            }
+        } catch (err) {
+            console.error('Failed to fetch profile:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
+    const getYearLabel = (y) => {
+        if (y === 1) return '1st Year';
+        if (y === 2) return '2nd Year';
+        if (y === 3) return '3rd Year';
+        if (y === 4) return '4th Year';
+        return `Year ${y}`;
+    };
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+                <Loader2 className="animate-spin" size={40} color="var(--primary-500)" />
+            </div>
+        );
+    }
+
+    const displayProfile = profile || {};
+    const displayName = displayProfile.name || user?.name || 'Student';
+    const displayEmail = displayProfile.email || user?.email || '';
+    const displayDept = displayProfile.department_name || 'Not Assigned';
+    const displayYear = displayProfile.year ? getYearLabel(displayProfile.year) : 'Not Assigned';
+    const displayRegNo = displayProfile.reg_no || 'Not Assigned';
+    const displayMobile = displayProfile.mobile || 'Not Available';
+    const displayParentMobile = displayProfile.parent_mobile || 'Not Available';
+    const displayBatch = displayProfile.batch || 'Not Assigned';
+
     const fields = [
-        { label: 'Full Name', value: profile.name, icon: User },
-        { label: 'Register Number', value: profile.reg_no, icon: Hash },
-        { label: 'Department', value: profile.department, icon: Building2 },
-        { label: 'Year', value: `${profile.year}rd Year`, icon: GraduationCap },
-        { label: 'Batch', value: profile.batch, icon: Calendar },
-        { label: 'Email', value: profile.email, icon: Mail },
-        { label: 'Mobile', value: profile.mobile, icon: Phone },
-        { label: 'Parent Mobile', value: profile.parentMobile, icon: Phone },
+        { label: 'Full Name', value: displayName, icon: User },
+        { label: 'Register Number', value: displayRegNo, icon: Hash },
+        { label: 'Department', value: displayDept, icon: Building2 },
+        { label: 'Year', value: displayYear, icon: GraduationCap },
+        { label: 'Batch', value: displayBatch, icon: Calendar },
+        { label: 'Email', value: displayEmail, icon: Mail },
+        { label: 'Mobile', value: displayMobile, icon: Phone },
+        { label: 'Parent Mobile', value: displayParentMobile, icon: Phone },
     ];
 
     return (
@@ -41,12 +79,14 @@ export default function MyProfile() {
                     <motion.div
                         whileHover={{ scale: 1.05 }}
                         style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-full)', background: 'linear-gradient(135deg, var(--primary-500), #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-display)', boxShadow: '0 8px 25px rgba(99,102,241,0.3)' }}>
-                        {profile.name.charAt(0)}
+                        {displayName.charAt(0)}
                     </motion.div>
                     <div>
-                        <h2 style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'var(--font-display)' }}>{profile.name}</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{profile.department}</p>
-                        <span className="badge badge-success" style={{ marginTop: '6px' }}>Active Student</span>
+                        <h2 style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'var(--font-display)' }}>{displayName}</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{displayDept}</p>
+                        <span className={`badge ${profile?.status === 'active' ? 'badge-success' : 'badge-warning'}`} style={{ marginTop: '6px' }}>
+                            {profile?.status === 'active' ? 'Active Student' : profile?.status || 'Pending'}
+                        </span>
                     </div>
                 </div>
 

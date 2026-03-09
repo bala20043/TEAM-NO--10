@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, Trash2, Search, Filter, Mail, Building2, ChevronDown, X } from 'lucide-react';
+import { UserPlus, Trash2, Search, Filter, Mail, Building2, ChevronDown, X, Loader2 } from 'lucide-react';
+import { adminAPI, departmentAPI } from '../../services/api';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -12,33 +13,69 @@ const itemVariants = {
 };
 
 export default function ManageStaff() {
-    const [staff, setStaff] = useState([
-        { id: 1, name: 'Dr. Priya Sharma', email: 'priya@college.edu', role: 'hod', department: 'Computer Science', status: 'active' },
-        { id: 2, name: 'Prof. Rajesh Kumar', email: 'rajesh@college.edu', role: 'staff', department: 'Electronics', status: 'active' },
-        { id: 3, name: 'Dr. Anita Desai', email: 'anita@college.edu', role: 'staff', department: 'Mechanical', status: 'active' },
-        { id: 4, name: 'Prof. Vikram Singh', email: 'vikram@college.edu', role: 'hod', department: 'Civil', status: 'active' },
-        { id: 5, name: 'Dr. Meera Patel', email: 'meera@college.edu', role: 'staff', department: 'Computer Science', status: 'active' },
-    ]);
-
+    const [staff, setStaff] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [newStaff, setNewStaff] = useState({ name: '', email: '', role: 'staff', department: '' });
+    const [newStaff, setNewStaff] = useState({ name: '', email: '', password: '', role: 'staff', department_id: '', year: '' });
+    const [apiError, setApiError] = useState('');
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [staffRes, deptRes] = await Promise.all([
+                adminAPI.getUsers('staff'), // This also includes hod/principal depending on backend filter
+                departmentAPI.getAll()
+            ]);
+
+            if (staffRes.users) setStaff(staffRes.users);
+            if (deptRes.departments) setDepartments(deptRes.departments);
+        } catch (err) {
+            setApiError('Failed to fetch data');
+        }
+        setLoading(false);
+    };
 
     const filteredStaff = staff.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.department.toLowerCase().includes(searchQuery.toLowerCase())
+        (s.department_name && s.department_name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    const handleAddStaff = (e) => {
+    const handleAddStaff = async (e) => {
         e.preventDefault();
-        setStaff(prev => [...prev, { ...newStaff, id: Date.now(), status: 'active' }]);
-        setNewStaff({ name: '', email: '', role: 'staff', department: '' });
-        setShowAddModal(false);
+        setApiError('');
+        try {
+            const result = await adminAPI.createUser(newStaff);
+            if (result.id || result.message) {
+                fetchData();
+                setNewStaff({ name: '', email: '', password: '', role: 'staff', department_id: '', year: '' });
+                setShowAddModal(false);
+            } else {
+                setApiError(result.error || 'Failed to add staff');
+            }
+        } catch (err) {
+            setApiError('Connection error');
+        }
     };
 
-    const handleDelete = (id) => {
-        setStaff(prev => prev.filter(s => s.id !== id));
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this staff member?')) return;
+        try {
+            const result = await adminAPI.deleteUser(id);
+            if (result.message) {
+                fetchData();
+            } else {
+                alert(result.error || 'Failed to delete user');
+            }
+        } catch (err) {
+            alert('Connection error');
+        }
     };
 
     return (
@@ -87,7 +124,7 @@ export default function ManageStaff() {
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Role</th>
-                                <th>Department</th>
+                                <th>Department / Class</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -115,11 +152,14 @@ export default function ManageStaff() {
                                     </td>
                                     <td>{member.email}</td>
                                     <td>
-                                        <span className={`badge ${member.role === 'hod' ? 'badge-primary' : 'badge-success'}`}>
+                                        <span className={`badge ${member.role === 'hod' ? 'badge-primary' : member.role === 'principal' ? 'badge-warning' : 'badge-success'}`}>
                                             {member.role.toUpperCase()}
                                         </span>
                                     </td>
-                                    <td>{member.department}</td>
+                                    <td>
+                                        {member.dept_code || member.department_name || 'N/A'}
+                                        {member.year && <span style={{ marginLeft: '8px', color: 'var(--primary-500)', fontWeight: 600 }}>Year {member.year}</span>}
+                                    </td>
                                     <td><span className="badge badge-success">Active</span></td>
                                     <td>
                                         <motion.button
@@ -162,6 +202,7 @@ export default function ManageStaff() {
                                     <X size={18} />
                                 </button>
                             </div>
+                            {apiError && <div className="badge badge-warning" style={{ marginBottom: '16px', width: '100%', padding: '10px' }}>{apiError}</div>}
                             <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <div>
                                     <label className="input-label">Full Name</label>
@@ -174,6 +215,11 @@ export default function ManageStaff() {
                                         onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })} required />
                                 </div>
                                 <div>
+                                    <label className="input-label">Password</label>
+                                    <input className="input-field" type="password" placeholder="Min 6 characters" value={newStaff.password}
+                                        onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })} required minLength={6} />
+                                </div>
+                                <div>
                                     <label className="input-label">Role</label>
                                     <select className="input-field" value={newStaff.role}
                                         onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}>
@@ -184,9 +230,27 @@ export default function ManageStaff() {
                                 </div>
                                 <div>
                                     <label className="input-label">Department</label>
-                                    <input className="input-field" placeholder="Enter department" value={newStaff.department}
-                                        onChange={(e) => setNewStaff({ ...newStaff, department: e.target.value })} required />
+                                    <select className="input-field" value={newStaff.department_id}
+                                        onChange={(e) => setNewStaff({ ...newStaff, department_id: e.target.value })} required>
+                                        <option value="">Select Department</option>
+                                        {departments.map(d => (
+                                            <option key={d.id} value={d.id}>{d.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
+                                {newStaff.role === 'staff' && (
+                                    <div>
+                                        <label className="input-label">Assign Year (Class Teacher)</label>
+                                        <select className="input-field" value={newStaff.year}
+                                            onChange={(e) => setNewStaff({ ...newStaff, year: e.target.value })}>
+                                            <option value="">No Class Assigned</option>
+                                            <option value="1">Year 1</option>
+                                            <option value="2">Year 2</option>
+                                            <option value="3">Year 3</option>
+                                            <option value="4">Year 4</option>
+                                        </select>
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                                     <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)} style={{ flex: 1 }}>Cancel</button>
                                     <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>

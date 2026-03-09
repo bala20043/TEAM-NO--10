@@ -3,213 +3,216 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    LayoutDashboard, Users, GraduationCap, Building2, Bell, FileText,
-    ClipboardList, BarChart3, Upload, Settings, LogOut, ChevronLeft,
-    ChevronRight, UserPlus, Database, Shield, BookOpen, Calendar,
-    Download, User, Menu, X
+  LayoutDashboard, Users, GraduationCap, Building2, Bell, FileText,
+  ClipboardList, BarChart3, Upload, Settings, LogOut, ChevronLeft,
+  ChevronRight, UserPlus, Database, Shield, BookOpen, Calendar,
+  Download, User, Menu, X, MessageSquare, Megaphone
 } from 'lucide-react';
 
 const roleMenus = {
-    admin: [
-        { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
-        { path: '/admin/staff', icon: Users, label: 'Manage Staff' },
-        { path: '/admin/students', icon: GraduationCap, label: 'Manage Students' },
-        { path: '/admin/departments', icon: Building2, label: 'Departments' },
-        { path: '/admin/announcements', icon: Bell, label: 'Alerts & Notices' },
-        { path: '/admin/reset-password', icon: Shield, label: 'Reset Password' },
-        { path: '/admin/backup', icon: Database, label: 'Database Backup' },
-    ],
-    principal: [
-        { path: '/staff', icon: LayoutDashboard, label: 'Dashboard', end: true },
-        { path: '/staff/attendance', icon: ClipboardList, label: 'Attendance' },
-        { path: '/staff/marks', icon: FileText, label: 'Marks' },
-        { path: '/staff/students', icon: GraduationCap, label: 'Students' },
-        { path: '/staff/announcements', icon: Bell, label: 'Announcements' },
-        { path: '/staff/reports', icon: BarChart3, label: 'Reports' },
-        { path: '/staff/documents', icon: Upload, label: 'Documents' },
-    ],
-    hod: [
-        { path: '/staff', icon: LayoutDashboard, label: 'Dashboard', end: true },
-        { path: '/staff/attendance', icon: ClipboardList, label: 'Attendance' },
-        { path: '/staff/marks', icon: FileText, label: 'Marks' },
-        { path: '/staff/students', icon: GraduationCap, label: 'Students' },
-        { path: '/staff/announcements', icon: Bell, label: 'Announcements' },
-        { path: '/staff/reports', icon: BarChart3, label: 'Reports' },
-        { path: '/staff/documents', icon: Upload, label: 'Documents' },
-    ],
-    staff: [
-        { path: '/staff', icon: LayoutDashboard, label: 'Dashboard', end: true },
-        { path: '/staff/attendance', icon: ClipboardList, label: 'Attendance' },
-        { path: '/staff/marks', icon: FileText, label: 'Marks' },
-        { path: '/staff/students', icon: GraduationCap, label: 'Students' },
-        { path: '/staff/announcements', icon: Bell, label: 'Announcements' },
-        { path: '/staff/reports', icon: BarChart3, label: 'Reports' },
-        { path: '/staff/documents', icon: Upload, label: 'Documents' },
-    ],
-    student: [
-        { path: '/student', icon: LayoutDashboard, label: 'Dashboard', end: true },
-        { path: '/student/attendance', icon: ClipboardList, label: 'My Attendance' },
-        { path: '/student/marks', icon: FileText, label: 'My Marks' },
-        { path: '/student/announcements', icon: Bell, label: 'Notices' },
-        { path: '/student/profile', icon: User, label: 'My Profile' },
-        { path: '/student/downloads', icon: Download, label: 'Downloads' },
-    ],
+  admin: [
+    { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { path: '/admin/staff', icon: Users, label: 'Manage Staff' },
+    { path: '/admin/students', icon: GraduationCap, label: 'Manage Students' },
+    { path: '/admin/departments', icon: Building2, label: 'Departments' },
+    { path: '/admin/announcements', icon: Bell, label: 'Alerts & Notices' },
+    { path: '/admin/reset-password', icon: Shield, label: 'Reset Password' },
+    { path: '/admin/backup', icon: Database, label: 'Database Backup' },
+    { path: '/staff/chat', icon: MessageSquare, label: 'Messages' },
+  ],
+  principal: [
+    { path: '/staff', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { path: '/staff/students', icon: GraduationCap, label: 'Students' },
+    { path: '/staff/announcements', icon: Bell, label: 'Broadcast' },
+    { path: '/staff/chat', icon: MessageSquare, label: 'Messages' },
+  ],
+  hod: [
+    { path: '/staff', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { path: '/staff/college-announcements', icon: Megaphone, label: 'College Notices' },
+    { path: '/staff/attendance', icon: ClipboardList, label: 'Dept Attendance' },
+    { path: '/staff/marks', icon: FileText, label: 'Dept Marks' },
+    { path: '/staff/students', icon: GraduationCap, label: 'Dept Students' },
+    { path: '/staff/announcements', icon: Bell, label: 'My Dept Notices' },
+    { path: '/staff/chat', icon: MessageSquare, label: 'Staff Communication' },
+  ],
+  staff: [
+    { path: '/staff', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { path: '/staff/college-announcements', icon: Megaphone, label: 'College Notices' },
+    { path: '/staff/attendance', icon: ClipboardList, label: 'Attendance' },
+    { path: '/staff/marks', icon: FileText, label: 'Marks' },
+    { path: '/staff/subjects', icon: BookOpen, label: 'Subjects' },
+    { path: '/staff/students', icon: GraduationCap, label: 'Students' },
+    { path: '/staff/announcements', icon: Bell, label: 'Dept Notices' },
+    { path: '/staff/reports', icon: BarChart3, label: 'Reports' },
+    { path: '/staff/documents', icon: Upload, label: 'Documents' },
+    { path: '/staff/chat', icon: MessageSquare, label: 'Student Chat' },
+  ],
+  student: [
+    { path: '/student', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { path: '/student/college-announcements', icon: Megaphone, label: 'College Notices' },
+    { path: '/student/attendance', icon: ClipboardList, label: 'My Attendance' },
+    { path: '/student/marks', icon: FileText, label: 'My Marks' },
+    { path: '/student/announcements', icon: Bell, label: 'Dept Notices' },
+    { path: '/student/profile', icon: User, label: 'My Profile' },
+    { path: '/student/downloads', icon: Download, label: 'Downloads' },
+    { path: '/student/chat', icon: MessageSquare, label: 'Teacher Chat' },
+  ],
 };
 
 export default function Sidebar() {
-    const { user, logout } = useAuth();
-    const [collapsed, setCollapsed] = useState(false);
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const location = useLocation();
+  const { user, logout } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
-    const role = user?.role || 'student';
-    const menuItems = roleMenus[role] || roleMenus.student;
+  const role = user?.role || 'student';
+  const menuItems = roleMenus[role] || roleMenus.student;
 
-    const sidebarContent = (
-        <>
-            {/* Logo / Brand */}
-            <div className="sidebar-brand">
+  const sidebarContent = (
+    <>
+      {/* Logo / Brand */}
+      <div className="sidebar-brand">
+        <motion.div
+          className="sidebar-logo"
+          whileHover={{ rotate: 360 }}
+          transition={{ duration: 0.6 }}
+        >
+          <GraduationCap size={collapsed ? 28 : 32} color="white" />
+        </motion.div>
+        {!collapsed && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="sidebar-brand-text"
+          >
+            <h2>SmartCMS</h2>
+            <span>{role.charAt(0).toUpperCase() + role.slice(1)} Panel</span>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="sidebar-nav">
+        {menuItems.map((item, index) => {
+          const Icon = item.icon;
+          const isActive = item.end
+            ? location.pathname === item.path
+            : location.pathname.startsWith(item.path);
+
+          return (
+            <motion.div
+              key={item.path}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <NavLink
+                to={item.path}
+                className={`sidebar-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMobileOpen(false)}
+              >
                 <motion.div
-                    className="sidebar-logo"
-                    whileHover={{ rotate: 360 }}
-                    transition={{ duration: 0.6 }}
+                  className="sidebar-link-icon"
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                    <GraduationCap size={collapsed ? 28 : 32} color="white" />
+                  <Icon size={20} />
                 </motion.div>
-                {!collapsed && (
-                    <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="sidebar-brand-text"
-                    >
-                        <h2>SmartCMS</h2>
-                        <span>{role.charAt(0).toUpperCase() + role.slice(1)} Panel</span>
-                    </motion.div>
+                {!collapsed && <span className="sidebar-link-text">{item.label}</span>}
+                {isActive && (
+                  <motion.div
+                    className="sidebar-active-indicator"
+                    layoutId="activeIndicator"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
                 )}
+              </NavLink>
+            </motion.div>
+          );
+        })}
+      </nav>
+
+      {/* User Info + Logout */}
+      <div className="sidebar-footer">
+        <div className="sidebar-user">
+          <div className="sidebar-avatar">
+            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          {!collapsed && (
+            <div className="sidebar-user-info">
+              <p className="sidebar-user-name">{user?.name || 'User'}</p>
+              <p className="sidebar-user-role">{role}</p>
             </div>
+          )}
+        </div>
+        <motion.button
+          className="sidebar-logout"
+          onClick={logout}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          title="Logout"
+        >
+          <LogOut size={18} />
+          {!collapsed && <span>Logout</span>}
+        </motion.button>
+      </div>
+    </>
+  );
 
-            {/* Navigation */}
-            <nav className="sidebar-nav">
-                {menuItems.map((item, index) => {
-                    const Icon = item.icon;
-                    const isActive = item.end
-                        ? location.pathname === item.path
-                        : location.pathname.startsWith(item.path);
+  return (
+    <>
+      {/* Mobile Menu Toggle */}
+      <button
+        className="mobile-menu-toggle"
+        onClick={() => setMobileOpen(!mobileOpen)}
+      >
+        {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
 
-                    return (
-                        <motion.div
-                            key={item.path}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                        >
-                            <NavLink
-                                to={item.path}
-                                className={`sidebar-link ${isActive ? 'active' : ''}`}
-                                onClick={() => setMobileOpen(false)}
-                            >
-                                <motion.div
-                                    className="sidebar-link-icon"
-                                    whileHover={{ scale: 1.15 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    <Icon size={20} />
-                                </motion.div>
-                                {!collapsed && <span className="sidebar-link-text">{item.label}</span>}
-                                {isActive && (
-                                    <motion.div
-                                        className="sidebar-active-indicator"
-                                        layoutId="activeIndicator"
-                                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                                    />
-                                )}
-                            </NavLink>
-                        </motion.div>
-                    );
-                })}
-            </nav>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            className="sidebar-mobile-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-            {/* User Info + Logout */}
-            <div className="sidebar-footer">
-                <div className="sidebar-user">
-                    <div className="sidebar-avatar">
-                        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </div>
-                    {!collapsed && (
-                        <div className="sidebar-user-info">
-                            <p className="sidebar-user-name">{user?.name || 'User'}</p>
-                            <p className="sidebar-user-role">{role}</p>
-                        </div>
-                    )}
-                </div>
-                <motion.button
-                    className="sidebar-logout"
-                    onClick={logout}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    title="Logout"
-                >
-                    <LogOut size={18} />
-                    {!collapsed && <span>Logout</span>}
-                </motion.button>
-            </div>
-        </>
-    );
+      {/* Desktop Sidebar */}
+      <motion.aside
+        className={`sidebar desktop-sidebar ${collapsed ? 'collapsed' : ''}`}
+        animate={{ width: collapsed ? 80 : 280 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      >
+        {sidebarContent}
+        <button
+          className="sidebar-collapse-btn"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+      </motion.aside>
 
-    return (
-        <>
-            {/* Mobile Menu Toggle */}
-            <button
-                className="mobile-menu-toggle"
-                onClick={() => setMobileOpen(!mobileOpen)}
-            >
-                {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.aside
+            className="sidebar mobile-sidebar"
+            initial={{ x: -300 }}
+            animate={{ x: 0 }}
+            exit={{ x: -300 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          >
+            {sidebarContent}
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
-            {/* Mobile Overlay */}
-            <AnimatePresence>
-                {mobileOpen && (
-                    <motion.div
-                        className="sidebar-mobile-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setMobileOpen(false)}
-                    />
-                )}
-            </AnimatePresence>
-
-            {/* Desktop Sidebar */}
-            <motion.aside
-                className={`sidebar desktop-sidebar ${collapsed ? 'collapsed' : ''}`}
-                animate={{ width: collapsed ? 80 : 280 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-            >
-                {sidebarContent}
-                <button
-                    className="sidebar-collapse-btn"
-                    onClick={() => setCollapsed(!collapsed)}
-                >
-                    {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-                </button>
-            </motion.aside>
-
-            {/* Mobile Sidebar */}
-            <AnimatePresence>
-                {mobileOpen && (
-                    <motion.aside
-                        className="sidebar mobile-sidebar"
-                        initial={{ x: -300 }}
-                        animate={{ x: 0 }}
-                        exit={{ x: -300 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    >
-                        {sidebarContent}
-                    </motion.aside>
-                )}
-            </AnimatePresence>
-
-            <style>{`
+      <style>{`
         .mobile-menu-toggle {
           display: none;
           position: fixed;
@@ -433,6 +436,6 @@ export default function Sidebar() {
           .sidebar-collapse-btn { display: none; }
         }
       `}</style>
-        </>
-    );
+    </>
+  );
 }

@@ -7,6 +7,7 @@ import DashboardShell from './components/layout/DashboardShell';
 
 // Auth
 import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -20,9 +21,16 @@ import BackupPage from './pages/admin/BackupPage';
 // Staff
 import StaffDashboard from './pages/staff/StaffDashboard';
 import TakeAttendance from './pages/staff/TakeAttendance';
+import HODAttendance from './pages/staff/HODAttendance';
 import UploadMarks from './pages/staff/UploadMarks';
+import HODMarks from './pages/staff/HODMarks';
 import Reports from './pages/staff/Reports';
 import UploadDocuments from './pages/staff/UploadDocuments';
+import HODStudents from './pages/staff/HODStudents';
+import HODAnnouncements from './pages/staff/HODAnnouncements';
+import CollegeAnnouncements from './pages/staff/CollegeAnnouncements';
+import StaffChat from './pages/staff/StaffChat';
+import ManageSubjects from './pages/staff/ManageSubjects';
 
 // Student
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -31,6 +39,7 @@ import MyMarks from './pages/student/MyMarks';
 import MyProfile from './pages/student/MyProfile';
 import StudentAnnouncements from './pages/student/StudentAnnouncements';
 import Downloads from './pages/student/Downloads';
+import ParentChat from './pages/student/ParentChat';
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }) {
@@ -55,10 +64,11 @@ function ProtectedRoute({ children, allowedRoles }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  const userRole = user.role?.toLowerCase();
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
     // Redirect to role-specific dashboard
-    if (user.role === 'admin') return <Navigate to="/admin" replace />;
-    if (['principal', 'hod', 'staff'].includes(user.role)) return <Navigate to="/staff" replace />;
+    if (userRole === 'admin') return <Navigate to="/admin" replace />;
+    if (['principal', 'hod', 'staff'].includes(userRole)) return <Navigate to="/staff" replace />;
     return <Navigate to="/student" replace />;
   }
 
@@ -70,9 +80,17 @@ function RoleRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role === 'admin') return <Navigate to="/admin" replace />;
-  if (['principal', 'hod', 'staff'].includes(user.role)) return <Navigate to="/staff" replace />;
+  const role = user.role?.toLowerCase();
+  if (role === 'admin') return <Navigate to="/admin" replace />;
+  if (['principal', 'hod', 'staff'].includes(role)) return <Navigate to="/staff" replace />;
   return <Navigate to="/student" replace />;
+}
+
+// Helper to switch between Staff and HOD components
+function StaffRoleRouter({ staffElement, hodElement }) {
+  const { user } = useAuth();
+  if (user?.role?.toLowerCase() === 'hod') return hodElement;
+  return staffElement;
 }
 
 function App() {
@@ -83,6 +101,7 @@ function App() {
           <Routes>
             {/* Public */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/" element={<RoleRedirect />} />
 
             {/* Admin Routes */}
@@ -107,12 +126,15 @@ function App() {
               </ProtectedRoute>
             }>
               <Route index element={<StaffDashboard />} />
-              <Route path="attendance" element={<TakeAttendance />} />
-              <Route path="marks" element={<UploadMarks />} />
-              <Route path="students" element={<ManageStudents />} />
-              <Route path="announcements" element={<AdminAnnouncements />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="documents" element={<UploadDocuments />} />
+              <Route path="attendance" element={<StaffRoleRouter staffElement={<TakeAttendance />} hodElement={<HODAttendance />} />} />
+              <Route path="marks" element={<ProtectedRoute allowedRoles={['hod', 'staff']}><StaffRoleRouter staffElement={<UploadMarks />} hodElement={<HODMarks />} /></ProtectedRoute>} />
+              <Route path="subjects" element={<ManageSubjects />} />
+              <Route path="students" element={<StaffRoleRouter staffElement={<ManageStudents />} hodElement={<HODStudents />} />} />
+              <Route path="announcements" element={<StaffRoleRouter staffElement={<AdminAnnouncements />} hodElement={<HODAnnouncements />} />} />
+              <Route path="college-announcements" element={<CollegeAnnouncements />} />
+              <Route path="reports" element={<ProtectedRoute allowedRoles={['staff']}><Reports /></ProtectedRoute>} />
+              <Route path="documents" element={<ProtectedRoute allowedRoles={['staff']}><UploadDocuments /></ProtectedRoute>} />
+              <Route path="chat" element={<StaffChat />} />
             </Route>
 
             {/* Student Routes */}
@@ -125,8 +147,10 @@ function App() {
               <Route path="attendance" element={<MyAttendance />} />
               <Route path="marks" element={<MyMarks />} />
               <Route path="announcements" element={<StudentAnnouncements />} />
+              <Route path="college-announcements" element={<CollegeAnnouncements />} />
               <Route path="profile" element={<MyProfile />} />
               <Route path="downloads" element={<Downloads />} />
+              <Route path="chat" element={<ParentChat />} />
             </Route>
 
             {/* Catch all */}

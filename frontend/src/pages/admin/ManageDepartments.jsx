@@ -1,39 +1,86 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Plus, Edit2, Trash2, X, Hash } from 'lucide-react';
+import { Building2, Plus, Edit2, Trash2, X, Hash, Loader2 } from 'lucide-react';
+import { departmentAPI } from '../../services/api';
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
 export default function ManageDepartments() {
-    const [departments, setDepartments] = useState([
-        { id: 1, name: 'Computer Science & Engineering', unique_code: 'CSE', students: 320, staff: 18 },
-        { id: 2, name: 'Electronics & Communication', unique_code: 'ECE', students: 280, staff: 15 },
-        { id: 3, name: 'Mechanical Engineering', unique_code: 'MECH', students: 240, staff: 14 },
-        { id: 4, name: 'Civil Engineering', unique_code: 'CIVIL', students: 200, staff: 12 },
-        { id: 5, name: 'Electrical Engineering', unique_code: 'EEE', students: 180, staff: 10 },
-        { id: 6, name: 'Basic Engineering', unique_code: 'BE', students: 0, staff: 8 },
-    ]);
+    const [departments, setDepartments] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editDept, setEditDept] = useState(null);
     const [form, setForm] = useState({ name: '', unique_code: '' });
+    const [apiError, setApiError] = useState('');
+
+    useEffect(() => {
+        fetchDepartments();
+    }, []);
+
+    const fetchDepartments = async () => {
+        setLoading(true);
+        try {
+            const result = await departmentAPI.getAll();
+            if (result.departments) {
+                setDepartments(result.departments);
+            } else {
+                setApiError('Failed to load departments');
+            }
+        } catch (err) {
+            setApiError('Connection error');
+        }
+        setLoading(false);
+    };
 
     const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#ef4444', '#14b8a6'];
 
-    const openAdd = () => { setEditDept(null); setForm({ name: '', unique_code: '' }); setShowModal(true); };
-    const openEdit = (dept) => { setEditDept(dept); setForm({ name: dept.name, unique_code: dept.unique_code }); setShowModal(true); };
+    const openAdd = () => { setEditDept(null); setForm({ name: '', unique_code: '' }); setShowModal(true); setApiError(''); };
+    const openEdit = (dept) => { setEditDept(dept); setForm({ name: dept.name, unique_code: dept.unique_code }); setShowModal(true); setApiError(''); };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        if (editDept) {
-            setDepartments(prev => prev.map(d => d.id === editDept.id ? { ...d, ...form } : d));
-        } else {
-            setDepartments(prev => [...prev, { ...form, id: Date.now(), students: 0, staff: 0 }]);
+        setApiError('');
+        try {
+            let result;
+            if (editDept) {
+                result = await departmentAPI.update(editDept.id, form);
+            } else {
+                result = await departmentAPI.create(form);
+            }
+
+            if (result.id || result.message) {
+                fetchDepartments();
+                setShowModal(false);
+            } else {
+                setApiError(result.error || 'Failed to save department');
+            }
+        } catch (err) {
+            setApiError('Failed to connect to server');
         }
-        setShowModal(false);
     };
 
-    const handleDelete = (id) => setDepartments(prev => prev.filter(d => d.id !== id));
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this department?')) return;
+        try {
+            const result = await departmentAPI.delete(id);
+            if (result.message) {
+                fetchDepartments();
+            } else {
+                alert(result.error || 'Failed to delete department');
+            }
+        } catch (err) {
+            alert('Connection error');
+        }
+    };
+
+    if (loading && departments.length === 0) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '300px' }}>
+                <Loader2 className="spin" size={32} style={{ color: 'var(--primary-500)' }} />
+            </div>
+        );
+    }
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="show">
@@ -46,6 +93,8 @@ export default function ManageDepartments() {
                     <Plus size={16} /> Add Department
                 </motion.button>
             </motion.div>
+
+            {apiError && !showModal && <div className="badge badge-warning" style={{ marginTop: '16px', width: '100%', padding: '12px' }}>{apiError}</div>}
 
             <motion.div variants={itemVariants} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginTop: '28px' }}>
                 {departments.map((dept, i) => (
@@ -73,16 +122,22 @@ export default function ManageDepartments() {
                         </div>
                         <div style={{ display: 'flex', gap: '24px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
                             <div>
-                                <p style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{dept.students}</p>
+                                <p style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{dept.student_count || 0}</p>
                                 <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Students</p>
                             </div>
                             <div>
-                                <p style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{dept.staff}</p>
+                                <p style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{dept.staff_count || 0}</p>
                                 <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Staff</p>
                             </div>
                         </div>
                     </motion.div>
                 ))}
+
+                {departments.length === 0 && !loading && (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                        No departments found. Add your first department!
+                    </div>
+                )}
             </motion.div>
 
             <AnimatePresence>
@@ -93,6 +148,9 @@ export default function ManageDepartments() {
                                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 700 }}>{editDept ? 'Edit Department' : 'Add Department'}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}><X size={18} /></button>
                             </div>
+
+                            {apiError && <div className="badge badge-warning" style={{ marginBottom: '16px', width: '100%', padding: '10px' }}>{apiError}</div>}
+
                             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <div><label className="input-label">Department Name</label><input className="input-field" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required placeholder="e.g. Computer Science & Engineering" /></div>
                                 <div><label className="input-label">Unique Code</label><input className="input-field" value={form.unique_code} onChange={e => setForm({ ...form, unique_code: e.target.value.toUpperCase() })} required placeholder="e.g. CSE" maxLength={10} /></div>

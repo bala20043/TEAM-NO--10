@@ -1,60 +1,84 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.exp * 1000 < Date.now()) {
-                    logout();
-                } else {
-                    setUser(payload);
-                }
-            } catch {
-                logout();
+        // Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            if (session) {
+                fetchProfile(session.user.id);
+            } else {
+                setLoading(false);
             }
+        });
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            if (session) {
+                fetchProfile(session.user.id);
+            } else {
+                setUser(null);
+                setLoading(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const fetchProfile = async (authId) => {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('*, department:departments(name, unique_code)')
+                .eq('auth_id', authId)
+                .single();
+
+            if (error) {
+                console.error('Error fetching profile:', error);
+            } else {
+                setUser(data);
+            }
+        } catch (err) {
+            console.error('Profile fetch failed', err);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
-    }, [token]);
+    };
 
     const login = async (email, password) => {
         try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Login failed');
-            localStorage.setItem('token', data.token);
-            if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-            setToken(data.token);
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
             return { success: true };
         } catch (err) {
             return { success: false, error: err.message };
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        setToken(null);
+    const logout = async () => {
+        await supabase.auth.signOut();
         setUser(null);
+        setSession(null);
     };
 
-    const getAuthHeaders = () => ({
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-    });
+    const getAuthHeaders = () => {
+        // Left for backward compatibility while migrating other APIs
+        return {
+            'Authorization': `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+        };
+    };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, logout, getAuthHeaders }}>
+        <AuthContext.Provider value={{ user, session, loading, login, logout, getAuthHeaders, supabase }}>
             {children}
         </AuthContext.Provider>
     );
