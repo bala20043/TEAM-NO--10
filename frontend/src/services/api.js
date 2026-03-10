@@ -93,31 +93,47 @@ export const adminAPI = {
         return { stats: { totalTeachers: teachers, totalStudents: students, departmentsCount: departments, recentActivities: [] } };
     },
     createUser: async (userData) => {
-        // Requires Service Role key in a real scenario for bypassing Auth, but we simulate it here
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: userData.email,
-            password: userData.password,
-        });
-        if (authError) {
-            console.error('Supabase Auth error:', authError.message);
-            throw new Error(authError.message);
-        }
-
-        const { error: profileError } = await supabase
-            .from('users')
-            .insert({
-                auth_id: authData.user.id,
-                name: userData.name,
+        try {
+            // 1. Create auth user
+            const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: userData.email,
-                role: userData.role,
-                department_id: userData.department_id
+                password: userData.password,
             });
+            if (authError) throw authError;
 
-        if (profileError) {
-            console.error('Supabase Profile DB error:', profileError.message);
-            throw new Error(profileError.message);
+            // 2. Check if profile already exists (maybe seeded)
+            const { data: existingProfile } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', userData.email)
+                .maybeSingle();
+
+            if (existingProfile) {
+                // Link
+                const { error: linkError } = await supabase
+                    .from('users')
+                    .update({ auth_id: authData.user.id, role: userData.role, department_id: userData.department_id })
+                    .eq('id', existingProfile.id);
+                if (linkError) throw linkError;
+            } else {
+                // Create
+                const { error: profileError } = await supabase
+                    .from('users')
+                    .insert({
+                        auth_id: authData.user.id,
+                        name: userData.name,
+                        email: userData.email,
+                        role: userData.role,
+                        department_id: userData.department_id
+                    });
+                if (profileError) throw profileError;
+            }
+
+            return { message: 'User created successfully' };
+        } catch (err) {
+            console.error('Admin Create User Error:', err);
+            throw new Error(err.message || 'Failed to create user');
         }
-        return { message: 'User created' };
     },
     getUsers: async (role) => {
         let query = supabase.from('users').select('*, department:departments(name)');

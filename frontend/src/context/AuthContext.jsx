@@ -88,6 +88,89 @@ export function AuthProvider({ children }) {
         }
     };
 
+    const register = async (userData) => {
+        try {
+            setLoading(true);
+
+            // 1. Create Auth User
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: userData.email,
+                password: userData.password,
+                options: {
+                    data: {
+                        name: userData.name,
+                        role: 'student'
+                    }
+                }
+            });
+
+            if (authError) throw authError;
+            if (!authData.user) throw new Error('Registration failed. Please try again.');
+
+            // 2. Check if profile already exists (maybe seeded)
+            const { data: existingProfile } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', userData.email)
+                .maybeSingle();
+
+            let profileId;
+
+            if (existingProfile) {
+                // Link existing profile
+                const { data: updated, error: linkError } = await supabase
+                    .from('users')
+                    .update({ auth_id: authData.user.id })
+                    .eq('id', existingProfile.id)
+                    .select('id')
+                    .single();
+                if (linkError) throw linkError;
+                profileId = updated.id;
+            } else {
+                // Create new profile
+                const { data: newProfile, error: profileError } = await supabase
+                    .from('users')
+                    .insert({
+                        auth_id: authData.user.id,
+                        name: userData.name,
+                        email: userData.email,
+                        role: 'student',
+                        department_id: userData.department_id
+                    })
+                    .select('id')
+                    .single();
+                if (profileError) throw profileError;
+                profileId = newProfile.id;
+            }
+
+            // 3. Create student record
+            const { error: studentError } = await supabase
+                .from('students')
+                .insert({
+                    user_id: profileId,
+                    reg_no: userData.reg_no,
+                    department_id: userData.department_id,
+                    year: userData.year,
+                    batch: userData.batch,
+                });
+
+            if (studentError) {
+                // If it's a unique constraint error on reg_no
+                if (studentError.code === '23505') {
+                    throw new Error(`Registration number ${userData.reg_no} is already in use.`);
+                }
+                throw studentError;
+            }
+
+            return { success: true, message: 'Account created! Please check your email for confirmation (if enabled).' };
+        } catch (err) {
+            console.error('Registration Error:', err);
+            return { success: false, error: err.message };
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const login = async (email, password) => {
         try {
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -113,7 +196,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, login, logout, getAuthHeaders, supabase }}>
+        <AuthContext.Provider value={{ user, session, loading, login, register, logout, getAuthHeaders, supabase }}>
             {children}
         </AuthContext.Provider>
     );

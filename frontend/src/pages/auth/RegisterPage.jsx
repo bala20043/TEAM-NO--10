@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UserPlus, Mail, Lock, User, GraduationCap, Building2, Calendar, Hash, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { authAPI, departmentAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -27,6 +28,7 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
+    const { register } = useAuth();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -63,13 +65,16 @@ export default function RegisterPage() {
         setError('');
 
         try {
-            const res = await authAPI.register({
+            const res = await register({
                 ...formData,
                 department_id: parseInt(formData.department_id),
                 year: parseInt(formData.year)
             });
+
             if (res.success) {
                 setSuccess(true);
+            } else {
+                setError(res.error || 'Registration failed');
             }
         } catch (err) {
             setError(err.message || 'Registration failed');
@@ -99,8 +104,8 @@ export default function RegisterPage() {
                         Registration Successful!
                     </h2>
                     <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '32px' }}>
-                        Your account has been created and is currently **pending approval** by the administrator.
-                        You will be able to log in once your request is approved.
+                        Your account has been created! If you don't see an "Email not confirmed" error when logging in, you can start using the system immediately.
+                        Otherwise, please **check your email** for a confirmation link.
                     </p>
                     <Link to="/login" className="btn btn-primary" style={{ width: '100%' }}>
                         Go to Login
