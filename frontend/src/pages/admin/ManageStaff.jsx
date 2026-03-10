@@ -29,14 +29,16 @@ export default function ManageStaff() {
         setLoading(true);
         try {
             const [staffRes, deptRes] = await Promise.all([
-                adminAPI.getUsers('staff'), // This also includes hod/principal depending on backend filter
+                adminAPI.getUsers('staff'),
                 departmentAPI.getAll()
             ]);
 
+            console.log('Fetch Data Success:', { staffCount: staffRes.users?.length, deptsCount: deptRes.departments?.length });
             if (staffRes.users) setStaff(staffRes.users);
             if (deptRes.departments) setDepartments(deptRes.departments);
         } catch (err) {
-            setApiError('Failed to fetch data');
+            console.error('Fetch Data Error:', err);
+            setApiError('Failed to fetch data: ' + (err.message || 'Check connection'));
         }
         setLoading(false);
     };
@@ -60,7 +62,8 @@ export default function ManageStaff() {
                 setApiError(result.error || 'Failed to add staff');
             }
         } catch (err) {
-            setApiError('Connection error');
+            console.error('Create staff error:', err);
+            setApiError(err.message || 'Connection error');
         }
     };
 
@@ -117,7 +120,7 @@ export default function ManageStaff() {
 
             {/* Staff Table */}
             <motion.div variants={itemVariants} className="card" style={{ marginTop: '20px', padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
+                <div className="table-responsive">
                     <table className="data-table">
                         <thead>
                             <tr>

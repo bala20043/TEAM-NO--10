@@ -47,79 +47,107 @@ async function seed() {
 
     // 2. Create Users
     for (const acc of demoAccounts) {
-        console.log(`\nProcessing ${acc.email} (${acc.role})...`);
+        console.log(`\n---------------------------------`);
+        console.log(`Processing: ${acc.email} | Role: ${acc.role}`);
 
-        // 2a. Check if already exists in auth
-        const { data: authAttempt, error: authError } = await supabase.auth.signUp({
-            email: acc.email,
-            password: acc.password,
-        });
+        // Wait 5 seconds between users to avoid rate limits
+        await new Promise(r => setTimeout(r, 5000));
 
-        if (authError && authError.message !== 'User already registered') {
-            console.error(`Failed to create Auth for ${acc.email}:`, authError);
-            continue;
-        }
+        let authId = null;
 
-        // We need the auth ID. If it said already registered, we try to log in to get the ID
-        let authId = authAttempt?.user?.id;
-        if (!authId) {
-            const { data: loginAttempt } = await supabase.auth.signInWithPassword({
+        // 2a. Attempt Auth Creation
+        try {
+            const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: acc.email,
-                password: acc.password
+                password: acc.password,
             });
-            authId = loginAttempt?.user?.id;
-        }
 
-        if (!authId) {
-            console.error(`Could not retrieve UUID for ${acc.email}`);
+            if (authError) {
+                if (authError.message === 'User already registered') {
+                    console.log(`Auth already exists for ${acc.email}. Fetching existing ID...`);
+                    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+                        email: acc.email,
+                        password: acc.password
+                    });
+                    if (loginError) {
+                        console.error(`Could not log in to existing user ${acc.email}:`, loginError.message);
+                        continue;
+                    }
+                    authId = loginData.user.id;
+                } else {
+                    console.error(`Auth creation failed for ${acc.email}:`, authError.message);
+                    continue;
+                }
+            } else {
+                authId = authData.user?.id;
+                console.log(`New Auth ID created: ${authId}`);
+            }
+        } catch (e) {
+            console.error(`Unexpected Auth error for ${acc.email}:`, e);
             continue;
         }
 
-        // 2b. Create Profile
-        const { data: profileCheck } = await supabase.from('users').select('id').eq('email', acc.email).single();
-        let profileId = profileCheck?.id;
-
-        if (!profileId) {
-            const { data: newProfile, error: profileCreateError } = await supabase
-                .from('users')
-                .insert({
-                    auth_id: authId,
-                    name: acc.name,
-                    email: acc.email,
-                    role: acc.role,
-                    department_id: deptId
-                })
-                .select('id')
-                .single();
-            if (profileCreateError) {
-                console.error(`Failed to create profile for ${acc.email}:`, profileCreateError);
-                continue;
-            }
-            profileId = newProfile.id;
-            console.log(`Created profile for ${acc.email}`);
-        } else {
-            console.log(`Profile already exists for ${acc.email}`);
+        if (!authId) {
+            console.error(`Critical Error: No UUID retrieved for ${acc.email}`);
+            continue;
         }
 
-        // 2c. If student, create student record
-        if (acc.role === 'student') {
-            const { data: studentCheck } = await supabase.from('students').select('id').eq('user_id', profileId).single();
-            if (!studentCheck) {
-                const { error: studentCreateError } = await supabase
-                    .from('students')
-                    .insert({
-                        user_id: profileId,
-                        reg_no: acc.reg,
-                        department_id: deptId,
-                        year: acc.year,
-                        batch: acc.batch
-                    });
-                if (studentCreateError) {
-                    console.error(`Failed to create student record for ${acc.email}:`, studentCreateError);
-                } else {
-                    console.log(`Created student record for ${acc.email}`);
-                }
+        // 2b. Create Profile Record
+        try {
+            const { data: profileCheck, error: checkError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', acc.email)
+                .maybeSingle();
+
+            if (checkError) {
+                console.error(`Error checking existing profile for ${acc.email}:`, checkError.message);
             }
+
+            if (!profileCheck) {
+                console.log(`Inserting profile for ${acc.email}...`);
+                const { data: newProfile, error: profileCreateError } = await supabase
+                    .from('users')
+                    .insert({
+                        auth_id: authId,
+                        name: acc.name,
+                        email: acc.email,
+                        role: acc.role,
+                        department_id: deptId
+                    })
+                    .select('id')
+                    .single();
+
+                if (profileCreateError) {
+                    console.error(`DB INSERT FAILED for profile ${acc.email}:`, profileCreateError.message);
+                    continue;
+                }
+                console.log(`Profile created successfully with DB ID: ${newProfile.id}`);
+
+                // 2c. If student, create student record
+                if (acc.role === 'student') {
+                    console.log(`Creating student record for ${acc.email}...`);
+                    const { error: studentCreateError } = await supabase
+                        .from('students')
+                        .insert({
+                            user_id: newProfile.id,
+                            reg_no: acc.reg,
+                            department_id: deptId,
+                            year: acc.year,
+                            batch: acc.batch
+                        });
+
+                    if (studentCreateError) {
+                        console.error(`STUDENT RECORD FAILED for ${acc.email}:`, studentCreateError.message);
+                    } else {
+                        console.log(`Student details recorded successfully.`);
+                    }
+                }
+            } else {
+                console.log(`Profile already exists for ${acc.email}. Skipping DB insert.`);
+            }
+        } catch (e) {
+            console.error(`Unexpected Profile DB error for ${acc.email}:`, e);
         }
     }
 

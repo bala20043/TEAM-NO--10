@@ -171,7 +171,7 @@ export default function HODMarks() {
                             </div>
                         )}
                     </div>
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="table-responsive">
                         <table className="data-table">
                             <thead>
                                 <tr>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Loader2, Shield, MessageSquare, Clock, Check, CheckCheck, Info } from 'lucide-react';
+import { Send, User, Loader2, Shield, MessageSquare, Clock, Check, CheckCheck, Info, ChevronLeft } from 'lucide-react';
 import { messageAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -131,6 +131,13 @@ export default function ParentChat() {
                     <div className="chat-window">
                         <div className="chat-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <motion.button
+                                    className="chat-back-btn"
+                                    onClick={() => setSelectedTeacher(null)}
+                                    whileTap={{ scale: 0.9 }}
+                                >
+                                    <ChevronLeft size={24} />
+                                </motion.button>
                                 <div className="avatar small">{selectedTeacher.name.charAt(0)}</div>
                                 <div>
                                     <h3 style={{ fontSize: '15px', fontWeight: 700 }}>{selectedTeacher.name}</h3>
@@ -375,6 +382,37 @@ export default function ParentChat() {
                     justify-content: center;
                     color: var(--text-muted);
                     text-align: center;
+                }
+
+                .chat-back-btn {
+                    display: none;
+                    color: var(--text-muted);
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    margin-left: -8px;
+                }
+
+                @media (max-width: 768px) {
+                    .chat-layout {
+                        height: calc(100vh - 120px);
+                    }
+                    .chat-contacts {
+                        width: 100%;
+                        display: ${selectedTeacher ? 'none' : 'flex'};
+                    }
+                    .chat-window {
+                        display: ${selectedTeacher ? 'flex' : 'none'};
+                    }
+                    .chat-back-btn {
+                        display: flex;
+                    }
+                    .chat-body {
+                        padding: 16px;
+                    }
+                    .msg-bubble {
+                        max-width: 90%;
+                    }
                 }
             `}</style>
         </div>

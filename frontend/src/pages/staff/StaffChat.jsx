@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Search, Loader2, Shield, MessageSquare, Clock, Check, CheckCheck } from 'lucide-react';
+import { Send, User, Search, Loader2, Shield, MessageSquare, Clock, Check, CheckCheck, ChevronLeft } from 'lucide-react';
 import { messageAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -145,6 +145,13 @@ export default function StaffChat() {
                     <>
                         <div className="chat-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <motion.button
+                                    className="chat-back-btn"
+                                    onClick={() => setSelectedContact(null)}
+                                    whileTap={{ scale: 0.9 }}
+                                >
+                                    <ChevronLeft size={24} />
+                                </motion.button>
                                 <div className="contact-avatar small">
                                     {selectedContact.name.charAt(0).toUpperCase()}
                                 </div>
@@ -490,6 +497,37 @@ export default function StaffChat() {
                     display: flex;
                     align-items: center;
                     gap: 8px;
+                }
+
+                .chat-back-btn {
+                    display: none;
+                    color: var(--text-muted);
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    margin-left: -8px;
+                }
+
+                @media (max-width: 768px) {
+                    .chat-container {
+                        height: calc(100vh - 120px);
+                    }
+                    .chat-sidebar {
+                        width: 100%;
+                        display: ${selectedContact ? 'none' : 'flex'};
+                    }
+                    .chat-main {
+                        display: ${selectedContact ? 'flex' : 'none'};
+                    }
+                    .chat-back-btn {
+                        display: flex;
+                    }
+                    .chat-messages {
+                        padding: 16px;
+                    }
+                    .message-bubble {
+                        max-width: 85%;
+                    }
                 }
             `}</style>
         </div>

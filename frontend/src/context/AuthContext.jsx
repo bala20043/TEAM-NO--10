@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             if (session) {
-                fetchProfile(session.user.id);
+                fetchProfile(session.user);
             } else {
                 setLoading(false);
             }
@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
             if (session) {
-                fetchProfile(session.user.id);
+                fetchProfile(session.user);
             } else {
                 setUser(null);
                 setLoading(false);
@@ -33,21 +33,56 @@ export function AuthProvider({ children }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    const fetchProfile = async (authId) => {
+    const fetchProfile = async (sessionUser) => {
+        console.log('Fetching profile for:', sessionUser.email);
         try {
-            const { data, error } = await supabase
+            // 1. Try matching by auth_id
+            let { data, error } = await supabase
                 .from('users')
                 .select('*, department:departments(name, unique_code)')
-                .eq('auth_id', authId)
-                .single();
+                .eq('auth_id', sessionUser.id)
+                .maybeSingle();
+
+            console.log('Match by auth_id result:', !!data);
+
+            // 2. Fallback: Try matching by email (for newly migrated/seeded users)
+            if (!data && !error) {
+                console.log('Profile match by ID failed, attempting email fallback...', sessionUser.email);
+                const { data: emailMatch, error: emailError } = await supabase
+                    .from('users')
+                    .select('*, department:departments(name, unique_code)')
+                    .eq('email', sessionUser.email)
+                    .maybeSingle();
+
+                if (emailMatch) {
+                    // LINK THE PROFILE: Update the record with the new auth_id
+                    console.log('Found profile by email. Linking auth_id...');
+                    const { data: updated, error: linkError } = await supabase
+                        .from('users')
+                        .update({ auth_id: sessionUser.id })
+                        .eq('id', emailMatch.id)
+                        .select('*, department:departments(name, unique_code)')
+                        .single();
+
+                    if (!linkError) {
+                        data = updated;
+                        console.log('Link successful.');
+                    } else {
+                        console.error('Link update failed:', linkError);
+                    }
+                } else {
+                    console.warn('No profile found for email:', sessionUser.email);
+                }
+            }
 
             if (error) {
                 console.error('Error fetching profile:', error);
             } else {
+                console.log('Setting user state:', data?.role);
                 setUser(data);
             }
         } catch (err) {
-            console.error('Profile fetch failed', err);
+            console.error('Profile fetch crash:', err);
         } finally {
             setLoading(false);
         }

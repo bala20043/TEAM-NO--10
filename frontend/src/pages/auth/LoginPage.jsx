@@ -36,9 +36,17 @@ export default function LoginPage() {
       // We will handle navigation in a useEffect based on the `user` state.
       if (!result.success) {
         setError(result.error || 'Invalid credentials');
+      } else {
+        // Successful Auth, but we need to check if profile is loading or missing
+        // We'll show a small tip if it takes too long
+        setTimeout(() => {
+          if (!user && !error) {
+            setError('Login successful, but your database profile is missing. Please run the SQL seed script in Supabase!');
+          }
+        }, 3000);
       }
     } catch (err) {
-      setError('Connection error. Please try again.');
+      setError(err.message || 'Connection error. Please try again.');
     }
     setLoading(false);
   };
@@ -48,9 +56,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      if (user.role === 'admin') navigate('/admin');
-      else if (['principal', 'hod', 'staff'].includes(user.role)) navigate('/staff');
-      else navigate('/student');
+      console.log('LoginPage: User detected, role:', user.role);
+      if (user.role === 'admin') {
+        console.log('Navigating to /admin');
+        navigate('/admin');
+      }
+      else if (['principal', 'hod', 'staff'].includes(user.role)) {
+        console.log('Navigating to /staff');
+        navigate('/staff');
+      }
+      else {
+        console.log('Navigating to /student');
+        navigate('/student');
+      }
+    } else {
+      console.log('LoginPage: No user profile found yet.');
     }
   }, [user, navigate]);
 

@@ -244,7 +244,7 @@ export default function ManageStudents() {
 
             {/* Table */}
             <motion.div variants={itemVariants} className="card" style={{ marginTop: tab === 'active' ? '20px' : '32px', padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
+                <div className="table-responsive">
                     <table className="data-table">
                         <thead>
                             <tr>

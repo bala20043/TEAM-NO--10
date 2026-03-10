@@ -5,14 +5,35 @@ const getCurrentUserId = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
-    // Fetch the internal user ID from the `users` table based on the auth UUID
-    const { data: user, error } = await supabase
+    // 1. Try matching by auth UUID
+    let { data: user, error } = await supabase
         .from('users')
         .select('id, role')
         .eq('auth_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-    if (error || !user) throw new Error('User profile not found');
+    // 2. Fallback: Try matching by email and link it
+    if (!user && !error) {
+        console.log('API: Profile match failed, link by email fallback...', session.user.email);
+        const { data: emailMatch } = await supabase
+            .from('users')
+            .select('id, role')
+            .eq('email', session.user.email)
+            .maybeSingle();
+
+        if (emailMatch) {
+            console.log('API: Linking user by email...');
+            const { data: linked } = await supabase
+                .from('users')
+                .update({ auth_id: session.user.id })
+                .eq('id', emailMatch.id)
+                .select('id, role')
+                .single();
+            user = linked;
+        }
+    }
+
+    if (!user) throw new Error('User profile not found. Please contact admin.');
     return user;
 };
 
@@ -77,7 +98,10 @@ export const adminAPI = {
             email: userData.email,
             password: userData.password,
         });
-        if (authError) throw authError;
+        if (authError) {
+            console.error('Supabase Auth error:', authError.message);
+            throw new Error(authError.message);
+        }
 
         const { error: profileError } = await supabase
             .from('users')
@@ -88,7 +112,11 @@ export const adminAPI = {
                 role: userData.role,
                 department_id: userData.department_id
             });
-        if (profileError) throw profileError;
+
+        if (profileError) {
+            console.error('Supabase Profile DB error:', profileError.message);
+            throw new Error(profileError.message);
+        }
         return { message: 'User created' };
     },
     getUsers: async (role) => {

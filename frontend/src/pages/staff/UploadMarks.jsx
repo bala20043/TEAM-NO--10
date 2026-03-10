@@ -229,55 +229,57 @@ export default function UploadMarks() {
                                         <p>No subjects defined for this semester. Please add subjects first.</p>
                                     </div>
                                 ) : (
-                                    <table className="mark-entry-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Subject</th>
-                                                <th className="text-center">Internal (50)</th>
-                                                <th className="text-center">External (50)</th>
-                                                <th className="text-center">Total</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {subjects.map(sub => {
-                                                const marks = studentMarks[sub.name] || {};
-                                                const total = (parseFloat(marks.internal) || 0) + (parseFloat(marks.external) || 0);
-                                                const isSemesterMode = examType === 'semester';
-                                                const internalDisabled = isSemesterMode && marks.existingExamType === 'internal';
+                                    <div className="table-responsive">
+                                        <table className="mark-entry-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Subject</th>
+                                                    <th className="text-center">Internal (50)</th>
+                                                    <th className="text-center">External (50)</th>
+                                                    <th className="text-center">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {subjects.map(sub => {
+                                                    const marks = studentMarks[sub.name] || {};
+                                                    const total = (parseFloat(marks.internal) || 0) + (parseFloat(marks.external) || 0);
+                                                    const isSemesterMode = examType === 'semester';
+                                                    const internalDisabled = isSemesterMode && marks.existingExamType === 'internal';
 
-                                                return (
-                                                    <tr key={sub.id}>
-                                                        <td className="subject-name-cell">{sub.name}</td>
-                                                        <td className="input-cell px-4">
-                                                            <input
-                                                                type="number"
-                                                                min="0" max="50"
-                                                                value={marks.internal}
-                                                                onChange={(e) => updateMark(sub.name, 'internal', e.target.value)}
-                                                                disabled={isSemesterMode}
-                                                                placeholder="—"
-                                                            />
-                                                        </td>
-                                                        <td className="input-cell px-4">
-                                                            <input
-                                                                type="number"
-                                                                min="0" max="50"
-                                                                value={marks.external}
-                                                                onChange={(e) => updateMark(sub.name, 'external', e.target.value)}
-                                                                disabled={!isSemesterMode}
-                                                                placeholder="—"
-                                                            />
-                                                        </td>
-                                                        <td className="total-cell text-center">
-                                                            <span className={total >= 50 ? 'pass' : total > 0 ? 'fail' : ''}>
-                                                                {total || '—'}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
+                                                    return (
+                                                        <tr key={sub.id}>
+                                                            <td className="subject-name-cell">{sub.name}</td>
+                                                            <td className="input-cell px-4">
+                                                                <input
+                                                                    type="number"
+                                                                    min="0" max="50"
+                                                                    value={marks.internal}
+                                                                    onChange={(e) => updateMark(sub.name, 'internal', e.target.value)}
+                                                                    disabled={isSemesterMode}
+                                                                    placeholder="—"
+                                                                />
+                                                            </td>
+                                                            <td className="input-cell px-4">
+                                                                <input
+                                                                    type="number"
+                                                                    min="0" max="50"
+                                                                    value={marks.external}
+                                                                    onChange={(e) => updateMark(sub.name, 'external', e.target.value)}
+                                                                    disabled={!isSemesterMode}
+                                                                    placeholder="—"
+                                                                />
+                                                            </td>
+                                                            <td className="total-cell text-center">
+                                                                <span className={total >= 50 ? 'pass' : total > 0 ? 'fail' : ''}>
+                                                                    {total || '—'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 )}
                             </div>
 
