@@ -150,9 +150,14 @@ export const adminAPI = {
         return { message: 'User deleted' };
     },
     resetPassword: async (data, newPassword) => {
-        // Only works for the logged-in user with anon key. Real admin reset requires Edge Functions/Service Role
-        alert("Password reset via Admin requires Supabase Edge Functions. User must use 'Forgot Password'.");
-        return { error: 'Requires Edge Function' };
+        const { data: res, error } = await supabase.rpc('admin_reset_password', { 
+            target_email: data.email, 
+            new_password: newPassword 
+        });
+        
+        if (error) throw error;
+        if (res.error) return { error: res.error };
+        return { message: res.message };
     },
     getPendingStudents: async () => {
         // Note: Missing 'approval_status' in schema, assuming all are approved for now
