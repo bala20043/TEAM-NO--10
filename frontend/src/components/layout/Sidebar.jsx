@@ -253,6 +253,15 @@ export default function Sidebar() {
           box-shadow: 10px 0 30px rgba(0,0,0,0.5);
         }
 
+        .sidebar-brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 24px 20px;
+          margin-bottom: 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
         .sidebar-logo {
           width: 44px;
           height: 44px;
@@ -263,6 +272,31 @@ export default function Sidebar() {
           justify-content: center;
           flex-shrink: 0;
           box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .sidebar-brand-text h2 {
+          font-family: 'Poppins', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: white;
+          line-height: 1.2;
+        }
+
+        .sidebar-brand-text span {
+          display: block;
+          font-size: 11px;
+          font-weight: 500;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .sidebar-nav {
+          flex: 1;
+          padding: 0 12px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
         }
 
         .sidebar-link {
@@ -304,6 +338,28 @@ export default function Sidebar() {
           box-shadow: 0 0 10px #8b5cf6;
         }
 
+        .sidebar-footer {
+          padding: 16px;
+          margin-top: auto;
+          border-top: 1px solid rgba(255, 255, 255, 0.03);
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .sidebar-user {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 8px;
+          border-radius: var(--radius-md);
+          background: rgba(255, 255, 255, 0.02);
+        }
+
+        .sidebar-user-info {
+          overflow: hidden;
+        }
+
         .sidebar-avatar {
           width: 38px;
           height: 38px;
@@ -315,6 +371,7 @@ export default function Sidebar() {
           color: white;
           font-weight: 700;
           box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+          flex-shrink: 0;
         }
 
         .sidebar-user-name {
