@@ -28,6 +28,7 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
+    const [honeypot, setHoneypot] = useState(''); // Anti-bot field
     const { register } = useAuth();
     const [formData, setFormData] = useState({
         name: '',
@@ -64,6 +65,13 @@ export default function RegisterPage() {
         setLoading(true);
         setError('');
 
+        // Anti-bot check
+        if (honeypot) {
+            setError('Request blocked. Please try again later.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const res = await register({
                 ...formData,
@@ -77,7 +85,7 @@ export default function RegisterPage() {
                 setError(res.error || 'Registration failed');
             }
         } catch (err) {
-            setError(err.message || 'Registration failed');
+            setError('An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -143,7 +151,16 @@ export default function RegisterPage() {
                     </motion.div>
                 )}
 
-                <form onSubmit={handleSubmit} className="auth-form">
+                <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
+                    {/* HONEYPOT FIELD */}
+                    <input 
+                        type="text" 
+                        style={{ display: 'none' }} 
+                        tabIndex="-1" 
+                        value={honeypot} 
+                        onChange={(e) => setHoneypot(e.target.value)} 
+                    />
+
                     <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <motion.div variants={itemVariants} className="form-group">
                             <label>Full Name</label>
