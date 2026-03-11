@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION public.admin_reset_password(target_email TEXT, new_pa
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER -- Runs with superuser privileges
-SET search_path = auth, public
+SET search_path = auth, public, extensions -- Added extensions
 AS $$
 DECLARE
     target_user_id UUID;
@@ -27,8 +27,8 @@ BEGIN
         RETURN json_build_object('error', 'Unauthorized: Only administrators can reset passwords.');
     END IF;
 
-    -- B. Find the Auth ID for the target email
-    SELECT id INTO target_user_id FROM auth.users WHERE email = target_email;
+    -- B. Find the Auth ID for the target email (Case-insensitive & trimmed)
+    SELECT id INTO target_user_id FROM auth.users WHERE lower(trim(email)) = lower(trim(target_email));
 
     IF target_user_id IS NULL THEN
         RETURN json_build_object('error', 'User not found in authentication system.');
@@ -36,7 +36,7 @@ BEGIN
 
     -- C. Update the password
     UPDATE auth.users
-    SET encrypted_password = crypt(new_password, gen_salt('bf')),
+    SET encrypted_password = crypt(new_password, gen_salt('bf'::text)), -- Added ::text cast
         updated_at = NOW()
     WHERE id = target_user_id;
 

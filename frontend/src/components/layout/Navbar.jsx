@@ -149,20 +149,20 @@ export default function Navbar() {
           align-items: center;
           justify-content: space-between;
           padding: 20px 32px;
-          background: var(--bg-primary);
-          border-bottom: 1px solid var(--border-color);
+          background: rgba(15, 23, 42, 0.4); /* Transparent with background showing through */
+          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
           position: sticky;
           top: 0;
           z-index: 30;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
         }
 
         .navbar-title {
-          font-family: var(--font-display);
+          font-family: 'Poppins', sans-serif;
           font-size: 22px;
           font-weight: 700;
-          color: var(--text-primary);
+          color: white;
         }
 
         .navbar-title span {

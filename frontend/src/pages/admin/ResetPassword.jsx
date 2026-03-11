@@ -27,7 +27,7 @@ export default function ResetPassword() {
                 setResult({ success: false, message: res.error || 'Failed to reset password' });
             }
         } catch (err) {
-            setResult({ success: false, message: 'Connection error. Please try again.' });
+            setResult({ success: false, message: err.message || 'An unexpected error occurred' });
         } finally {
             setLoading(false);
             setTimeout(() => setResult(null), 5000);
