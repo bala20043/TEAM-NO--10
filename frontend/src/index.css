@@ -239,11 +239,11 @@ textarea {
 
   0%,
   100% {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
   }
 
   50% {
-    box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
   }
 }
 
@@ -389,7 +389,7 @@ textarea {
 .glass-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 25px 50px -12px var(--shadow-color);
-  border-color: var(--primary-400);
+  border-color: var(--accent-purple);
 }
 
 /* ===== GRADIENT BACKGROUNDS ===== */
@@ -408,7 +408,7 @@ textarea {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--primary-400), #7c3aed, var(--accent-400));
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan), var(--accent-emerald));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -466,7 +466,7 @@ textarea {
 
 .btn-secondary:hover {
   background: var(--bg-secondary);
-  border-color: var(--primary-400);
+  border-color: var(--accent-purple);
 }
 
 .btn-danger {
