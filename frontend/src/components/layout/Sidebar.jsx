@@ -77,7 +77,15 @@ export default function Sidebar() {
           whileHover={{ rotate: 360 }}
           transition={{ duration: 0.6 }}
         >
-          <GraduationCap size={collapsed ? 28 : 32} color="white" />
+          <img 
+            src="/logo.png" 
+            alt="SmartCMS" 
+            style={{ 
+              width: collapsed ? '32px' : '36px', 
+              height: 'auto',
+              filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.5))' 
+            }} 
+          />
         </motion.div>
         {!collapsed && (
           <motion.div
