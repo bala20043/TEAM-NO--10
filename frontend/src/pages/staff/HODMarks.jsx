@@ -150,58 +150,106 @@ export default function HODMarks() {
                 </div>
             </motion.div>
 
+            {/* Record List */}
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
                     <Loader2 className="animate-spin" size={48} color="var(--primary-500)" />
                 </div>
             ) : (
-                <div className="card no-padding" style={{ marginTop: '24px' }}>
-                    <div className="table-header-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="card-container" style={{ marginTop: '24px' }}>
+                    <div className="table-header-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <div>
-                            <h3 style={{ margin: 0 }}>Showing {filteredMarks.length} records — Year {selectedYear}, Semester {selectedSemester}</h3>
-                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>{deptName}</p>
+                            <h3 style={{ margin: 0, fontSize: '15px' }}>Showing {filteredMarks.length} records</h3>
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Year {selectedYear}, Sem {selectedSemester} • {deptName}</p>
                         </div>
                         {topPerformer && (
-                            <div className="top-performer-badge">
+                            <div className="top-performer-badge hide-mobile">
                                 <div className="tp-icon"><Award size={16} /></div>
                                 <div>
                                     <p className="tp-label">Top Performer</p>
-                                    <p className="tp-name">{topPerformer.name} <span className="tp-score">({topPerformer.total} marks)</span></p>
+                                    <p className="tp-name">{topPerformer.name} <span className="tp-score">({topPerformer.total})</span></p>
                                 </div>
                             </div>
                         )}
                     </div>
-                    <div className="table-responsive">
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Reg No</th>
-                                    <th>Name</th>
-                                    <th>Subject</th>
-                                    <th>Internal</th>
-                                    <th>External</th>
-                                    <th style={{ textAlign: 'center' }}>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredMarks.map((m, i) => (
-                                    <tr key={`${m.student_id}-${m.subject}-${i}`}>
-                                        <td style={{ fontFamily: 'monospace', color: 'var(--primary-400)', fontWeight: 600 }}>{m.reg_no}</td>
-                                        <td>{m.name}</td>
-                                        <td>{m.subject}</td>
-                                        <td>{m.internal_marks}</td>
-                                        <td>{m.external_marks || '—'}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <span className={`score-badge ${m.total >= 50 ? 'pass' : 'fail'}`}>{m.total}</span>
-                                        </td>
+
+                    {/* Desktop Table */}
+                    <div className="card no-padding hide-mobile">
+                        <div className="table-responsive">
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Reg No</th>
+                                        <th>Name</th>
+                                        <th>Subject</th>
+                                        <th>Internal</th>
+                                        <th>External</th>
+                                        <th style={{ textAlign: 'center' }}>Total</th>
                                     </tr>
-                                ))}
-                                {filteredMarks.length === 0 && (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No semester results found.</td></tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filteredMarks.map((m, i) => (
+                                        <tr key={`${m.student_id}-${m.subject}-${i}`}>
+                                            <td style={{ fontFamily: 'monospace', color: 'var(--primary-400)', fontWeight: 600 }}>{m.reg_no}</td>
+                                            <td>{m.name}</td>
+                                            <td>{m.subject}</td>
+                                            <td>{m.internal_marks}</td>
+                                            <td>{m.external_marks || '—'}</td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <span className={`score-badge ${m.total >= 50 ? 'pass' : 'fail'}`}>{m.total}</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    {/* Mobile Cards */}
+                    <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {topPerformer && (
+                            <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1))', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div className="tp-icon" style={{ background: '#10b981' }}><Award size={20} /></div>
+                                    <div>
+                                        <p style={{ fontSize: '10px', fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>Department Topper</p>
+                                        <p style={{ fontSize: '15px', fontWeight: 800 }}>{topPerformer.name} <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>({topPerformer.total})</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {filteredMarks.map((m, i) => (
+                            <div key={i} className="card" style={{ padding: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                    <div>
+                                        <h4 style={{ fontSize: '15px', fontWeight: 700 }}>{m.name}</h4>
+                                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{m.reg_no}</p>
+                                    </div>
+                                    <span className={`score-badge ${m.total >= 50 ? 'pass' : 'fail'}`}>{m.total}</span>
+                                </div>
+                                <div style={{ marginBottom: '10px' }}>
+                                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Subject</p>
+                                    <p style={{ fontSize: '14px', fontWeight: 600 }}>{m.subject}</p>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                                    <div>
+                                        <p style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Internal</p>
+                                        <p style={{ fontSize: '13px', fontWeight: 600 }}>{m.internal_marks}</p>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '10px', color: 'var(--text-muted)' }}>External</p>
+                                        <p style={{ fontSize: '13px', fontWeight: 600 }}>{m.external_marks || '—'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {filteredMarks.length === 0 && (
+                        <div className="card" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                            No semester results found.
+                        </div>
+                    )}
                 </div>
             )}
 

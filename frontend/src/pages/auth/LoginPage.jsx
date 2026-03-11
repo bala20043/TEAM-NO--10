@@ -12,11 +12,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
-  const { login } = useAuth();
+  const [honeypot, setHoneypot] = useState(''); // Anti-bot field
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState(null);
+  const { login, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  // Demo accounts for testing
+  // Demo roles info
   const demoAccounts = [
     { role: 'admin', email: 'admin@college.edu', password: 'admin123', icon: '🛠', color: '#6366f1' },
     { role: 'principal', email: 'principal@college.edu', password: 'password123', icon: '👨‍💼', color: '#8b5cf6' },
@@ -28,62 +31,58 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // 1. Check Lockout
+    if (lockoutUntil && new Date() < lockoutUntil) {
+      const waitTime = Math.ceil((lockoutUntil - new Date()) / 1000);
+      setError(`Too many failed attempts. Please wait ${waitTime} seconds.`);
+      return;
+    }
+
+    // 2. Check Honeypot (Bots usually fill every field they find)
+    if (honeypot) {
+      setError('Bot detected. Please try again later.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const result = await login(email, password);
-      // Wait for the AuthContext onAuthStateChange to fetch the profile and update the user state.
-      // We will handle navigation in a useEffect based on the `user` state.
       if (!result.success) {
-        setError(result.error || 'Invalid credentials');
+        // Increment failed attempts
+        const newCount = failedAttempts + 1;
+        setFailedAttempts(newCount);
+
+        if (newCount >= 5) {
+          const lockoutTime = new Date(new Date().getTime() + 30 * 1000); // 30 sec lockout
+          setLockoutUntil(lockoutTime);
+          setError('Too many failed attempts. Security lockout active for 30 seconds.');
+          setFailedAttempts(0); // Reset for next cycle
+        } else {
+          setError('Invalid email or password'); // Generic message for security
+        }
       } else {
-        // Successful Auth, but we need to check if profile is loading or missing
-        // We'll show a small tip if it takes too long
-        setTimeout(() => {
-          if (!user && !error) {
-            setError('Login successful, but your database profile is missing. Please run the SQL seed script in Supabase!');
-          }
-        }, 3000);
+        setFailedAttempts(0); // Clear on success
       }
     } catch (err) {
-      setError(err.message || 'Connection error. Please try again.');
+      setError('An error occurred. Please try again.');
     }
     setLoading(false);
   };
 
   // Listen for user role changes to navigate
-  const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
-      console.log('LoginPage: User detected, role:', user.role);
-      if (user.role === 'admin') {
-        console.log('Navigating to /admin');
-        navigate('/admin');
-      }
-      else if (['principal', 'hod', 'staff'].includes(user.role)) {
-        console.log('Navigating to /staff');
-        navigate('/staff');
-      }
-      else {
-        console.log('Navigating to /student');
-        navigate('/student');
-      }
-    } else {
-      console.log('LoginPage: No user profile found yet.');
+      if (user.role === 'admin') navigate('/admin');
+      else if (['principal', 'hod', 'staff'].includes(user.role)) navigate('/staff');
+      else navigate('/student');
     }
   }, [user, navigate]);
 
-  const fillDemo = (account) => {
-    setEmail(account.email);
-    setPassword(account.password);
-    setSelectedRole(account.role);
-    setError('');
-  };
-
   return (
     <div className="login-page">
-      {/* Animated background */}
       <div className="login-bg">
         <div className="login-bg-orb orb-1"></div>
         <div className="login-bg-orb orb-2"></div>
@@ -91,7 +90,6 @@ export default function LoginPage() {
         <div className="login-bg-grid"></div>
       </div>
 
-      {/* Theme toggle */}
       <motion.button
         className="login-theme-toggle"
         onClick={toggleTheme}
@@ -102,7 +100,6 @@ export default function LoginPage() {
       </motion.button>
 
       <div className="login-container">
-        {/* Left - Branding */}
         <motion.div
           className="login-brand-section"
           initial={{ opacity: 0, x: -40 }}
@@ -142,7 +139,6 @@ export default function LoginPage() {
           </div>
         </motion.div>
 
-        {/* Right - Login Form */}
         <motion.div
           className="login-form-section"
           initial={{ opacity: 0, x: 40 }}
@@ -155,30 +151,39 @@ export default function LoginPage() {
               <p>Sign in to your account to continue</p>
             </div>
 
-            {/* Demo Role Selector */}
+            {/* Role Indicators */}
             <div className="demo-roles">
-              <p className="demo-roles-label">Quick Demo Login:</p>
+              <p className="demo-roles-label">Available Panels:</p>
               <div className="demo-roles-grid">
                 {demoAccounts.map((acc, i) => (
-                  <motion.button
+                  <motion.div
                     key={acc.role}
                     className={`demo-role-btn ${selectedRole === acc.role ? 'active' : ''}`}
-                    onClick={() => fillDemo(acc)}
+                    onClick={() => setSelectedRole(acc.role)}
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + i * 0.05 }}
-                    style={{ '--role-color': acc.color }}
+                    style={{ '--role-color': acc.color, cursor: 'pointer' }}
                   >
                     <span className="demo-role-icon">{acc.icon}</span>
                     <span className="demo-role-name">{acc.role}</span>
-                  </motion.button>
+                  </motion.div>
                 ))}
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="login-form">
+            <form onSubmit={handleSubmit} className="login-form" autoComplete="off">
+              {/* HONEYPOT FIELD (Hidden from humans, filled by bots) */}
+              <input 
+                type="text" 
+                style={{ display: 'none' }} 
+                tabIndex="-1" 
+                value={honeypot} 
+                onChange={(e) => setHoneypot(e.target.value)} 
+              />
+
               <div className="input-group">
                 <label className="input-label">Email Address</label>
                 <div className="input-wrapper">
@@ -190,6 +195,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    autoComplete="new-email"
                   />
                 </div>
               </div>
@@ -205,6 +211,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -431,25 +438,27 @@ export default function LoginPage() {
         }
 
         .demo-roles-label {
-          font-size: 12px;
-          font-weight: 600;
+          font-size: 11px;
+          font-weight: 700;
           color: var(--text-muted);
-          margin-bottom: 10px;
+          margin-bottom: 12px;
           text-transform: uppercase;
-          letter-spacing: 0.06em;
+          letter-spacing: 0.1em;
+          text-align: center;
         }
 
         .demo-roles-grid {
           display: flex;
           gap: 8px;
           flex-wrap: wrap;
+          justify-content: center;
         }
 
         .demo-role-btn {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 8px 14px;
+          padding: 8px 12px;
           border-radius: var(--radius-md);
           background: var(--bg-tertiary);
           border: 1.5px solid var(--border-color);
@@ -467,9 +476,9 @@ export default function LoginPage() {
 
         .demo-role-btn.active {
           border-color: var(--role-color);
-          background: color-mix(in srgb, var(--role-color) 10%, transparent);
+          background: color-mix(in srgb, var(--role-color) 12%, transparent);
           color: var(--text-primary);
-          box-shadow: 0 0 12px color-mix(in srgb, var(--role-color) 25%, transparent);
+          box-shadow: 0 4px 12px color-mix(in srgb, var(--role-color) 20%, transparent);
         }
 
         .demo-role-icon {

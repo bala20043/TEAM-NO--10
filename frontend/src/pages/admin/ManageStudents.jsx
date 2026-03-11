@@ -242,92 +242,173 @@ export default function ManageStudents() {
                 </div>
             )}
 
-            {/* Table */}
-            <motion.div variants={itemVariants} className="card" style={{ marginTop: tab === 'active' ? '20px' : '32px', padding: 0, overflow: 'hidden' }}>
-                <div className="table-responsive">
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Student</th>
-                                <th>Reg No</th>
-                                <th>Dept</th>
-                                <th>Year</th>
-                                <th>Batch</th>
-                                <th>{tab === 'active' ? 'Status' : 'Date'}</th>
-                                {!isPrincipal && <th>Actions</th>}
-                                {isPrincipal && <th>Profile</th>}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {(tab === 'active' ? students : pendingStudents).map((s, i) => (
-                                <motion.tr key={s.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-full)', background: s.status === 'active' ? 'linear-gradient(135deg,#10b981,#06b6d4)' : tab === 'pending' ? 'linear-gradient(135deg,#f59e0b,#ef4444)' : 'var(--gray-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>
-                                                {s.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{s.name}</p>
-                                                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.email}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--primary-400)' }}>{s.reg_no}</span></td>
-                                    <td><span className="badge badge-primary">{s.dept_code || s.department_name}</span></td>
-                                    <td>Year {s.year}</td>
-                                    <td style={{ fontSize: '13px' }}>{s.batch}</td>
-                                    <td>
-                                        {tab === 'active' ? (
-                                            <span className={`badge ${s.status === 'active' ? 'badge-success' : 'badge-warning'}`}>{s.status}</span>
-                                        ) : (
-                                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(s.created_at).toLocaleDateString()}</span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                            <motion.button className="btn btn-ghost btn-sm" whileHover={{ scale: 1.1 }} onClick={() => setViewStudent(s)} title="View"><Eye size={15} style={{ color: 'var(--primary-400)' }} /></motion.button>
-                                            {!isPrincipal && (
-                                                tab === 'active' ? (
-                                                    <motion.button className="btn btn-ghost btn-sm" whileHover={{ scale: 1.1 }} onClick={() => handleArchive(s.id)} title={s.status === 'active' ? 'Archive' : 'Restore'}>
-                                                        <Archive size={15} style={{ color: s.status === 'active' ? 'var(--warning-500)' : 'var(--accent-500)' }} />
-                                                    </motion.button>
-                                                ) : (
-                                                    <>
-                                                        <motion.button
-                                                            className="btn btn-ghost btn-sm"
-                                                            whileHover={{ scale: 1.1 }}
-                                                            onClick={() => handleApprove(s.id)}
-                                                            title="Approve"
-                                                        >
-                                                            <CheckCircle2 size={15} style={{ color: 'var(--accent-500)' }} />
-                                                        </motion.button>
-                                                        <motion.button
-                                                            className="btn btn-ghost btn-sm"
-                                                            whileHover={{ scale: 1.1 }}
-                                                            onClick={() => handleReject(s.id)}
-                                                            title="Reject"
-                                                        >
-                                                            <UserX size={15} style={{ color: 'var(--danger-500)' }} />
-                                                        </motion.button>
-                                                    </>
-                                                )
-                                            )}
-                                        </div>
-                                    </td>
-                                </motion.tr>
-                            ))}
-
-                            {(tab === 'active' ? students : pendingStudents).length === 0 && !loading && (
+            {/* Desktop Table & Mobile Cards */}
+            <motion.div variants={itemVariants} style={{ marginTop: tab === 'active' ? '20px' : '32px' }}>
+                {/* Desktop View (Table) */}
+                <div className="card hide-mobile" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div className="table-responsive">
+                        <table className="data-table">
+                            <thead>
                                 <tr>
-                                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                                        {tab === 'active' ? 'No students found matching your filters.' : 'No pending registration requests.'}
-                                    </td>
+                                    <th>Student</th>
+                                    <th>Reg No</th>
+                                    <th>Dept</th>
+                                    <th>Year</th>
+                                    <th>Batch</th>
+                                    <th>{tab === 'active' ? 'Status' : 'Date'}</th>
+                                    {!isPrincipal && <th>Actions</th>}
+                                    {isPrincipal && <th>Profile</th>}
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {(tab === 'active' ? students : pendingStudents).map((s, i) => (
+                                    <motion.tr key={s.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-full)', background: s.status === 'active' ? 'linear-gradient(135deg,#10b981,#06b6d4)' : tab === 'pending' ? 'linear-gradient(135deg,#f59e0b,#ef4444)' : 'var(--gray-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>
+                                                    {s.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>{s.name}</p>
+                                                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.email}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--primary-400)' }}>{s.reg_no}</span></td>
+                                        <td><span className="badge badge-primary">{s.dept_code || s.department_name}</span></td>
+                                        <td>Year {s.year}</td>
+                                        <td style={{ fontSize: '13px' }}>{s.batch}</td>
+                                        <td>
+                                            {tab === 'active' ? (
+                                                <span className={`badge ${s.status === 'active' ? 'badge-success' : 'badge-warning'}`}>{s.status}</span>
+                                            ) : (
+                                                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(s.created_at).toLocaleDateString()}</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                <motion.button className="btn btn-ghost btn-sm" whileHover={{ scale: 1.1 }} onClick={() => setViewStudent(s)} title="View"><Eye size={15} style={{ color: 'var(--primary-400)' }} /></motion.button>
+                                                {!isPrincipal && (
+                                                    tab === 'active' ? (
+                                                        <motion.button className="btn btn-ghost btn-sm" whileHover={{ scale: 1.1 }} onClick={() => handleArchive(s.id)} title={s.status === 'active' ? 'Archive' : 'Restore'}>
+                                                            <Archive size={15} style={{ color: s.status === 'active' ? 'var(--warning-500)' : 'var(--accent-500)' }} />
+                                                        </motion.button>
+                                                    ) : (
+                                                        <>
+                                                            <motion.button
+                                                                className="btn btn-ghost btn-sm"
+                                                                whileHover={{ scale: 1.1 }}
+                                                                onClick={() => handleApprove(s.id)}
+                                                                title="Approve"
+                                                            >
+                                                                <CheckCircle2 size={15} style={{ color: 'var(--accent-500)' }} />
+                                                            </motion.button>
+                                                            <motion.button
+                                                                className="btn btn-ghost btn-sm"
+                                                                whileHover={{ scale: 1.1 }}
+                                                                onClick={() => handleReject(s.id)}
+                                                                title="Reject"
+                                                            >
+                                                                <UserX size={15} style={{ color: 'var(--danger-500)' }} />
+                                                            </motion.button>
+                                                        </>
+                                                    )
+                                                )}
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
+                {/* Mobile View (Cards) */}
+                <div className="mobile-only" style={{ display: 'none' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {(tab === 'active' ? students : pendingStudents).map((s, i) => (
+                            <motion.div 
+                                key={s.id} 
+                                className="card" 
+                                initial={{ opacity: 0, y: 10 }} 
+                                animate={{ opacity: 1, y: 0 }} 
+                                transition={{ delay: i * 0.04 }}
+                                style={{ padding: '16px' }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-full)', background: s.status === 'active' ? 'linear-gradient(135deg,#10b981,#06b6d4)' : tab === 'pending' ? 'linear-gradient(135deg,#f59e0b,#ef4444)' : 'var(--gray-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '15px' }}>
+                                            {s.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontSize: '15px', fontWeight: 700 }}>{s.name}</h4>
+                                            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.email}</p>
+                                        </div>
+                                    </div>
+                                    <span className={`badge ${tab === 'active' ? (s.status === 'active' ? 'badge-success' : 'badge-warning') : 'badge-primary'}`}>
+                                        {tab === 'active' ? s.status : 'Pending'}
+                                    </span>
+                                </div>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', marginBottom: '12px' }}>
+                                    <div>
+                                        <p style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>Reg No</p>
+                                        <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary-400)' }}>{s.reg_no}</p>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>Department</p>
+                                        <p style={{ fontSize: '13px', fontWeight: 600 }}>{s.dept_code || s.department_name}</p>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>Year</p>
+                                        <p style={{ fontSize: '13px', fontWeight: 600 }}>Year {s.year}</p>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>Batch</p>
+                                        <p style={{ fontSize: '13px', fontWeight: 600 }}>{s.batch}</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setViewStudent(s)}>
+                                        <Eye size={14} /> View Details
+                                    </button>
+                                    {!isPrincipal && (
+                                        tab === 'active' ? (
+                                            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => handleArchive(s.id)}>
+                                                <Archive size={14} style={{ color: s.status === 'active' ? 'var(--warning-500)' : 'var(--accent-500)' }} />
+                                                {s.status === 'active' ? 'Archive' : 'Restore'}
+                                            </button>
+                                        ) : (
+                                            <div style={{ display: 'flex', gap: '4px', flex: 1 }}>
+                                                <button className="btn btn-success btn-sm" style={{ flex: 1 }} onClick={() => handleApprove(s.id)}>
+                                                    <CheckCircle2 size={14} /> Approve
+                                                </button>
+                                                <button className="btn btn-danger btn-sm" style={{ flex: 1 }} onClick={() => handleReject(s.id)}>
+                                                    <UserX size={14} /> Reject
+                                                </button>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+
+                {(tab === 'active' ? students : pendingStudents).length === 0 && !loading && (
+                    <div style={{ textAlign: 'center', padding: '60px 40px', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                        <p>{tab === 'active' ? 'No students found matching your filters.' : 'No pending registration requests.'}</p>
+                    </div>
+                )}
             </motion.div>
+
+            <style>{`
+                @media (max-width: 768px) {
+                    .hide-mobile { display: none !important; }
+                    .mobile-only { display: block !important; }
+                }
+            `}</style>
 
 
             {/* View Student Modal */}

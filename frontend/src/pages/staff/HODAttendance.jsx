@@ -142,13 +142,16 @@ export default function HODAttendance() {
 
     const renderStudentTable = (students, year) => (
         <div style={{ marginTop: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <h2 className="section-title"><GraduationCap size={20} /> Year {year} Students ({students.length})</h2>
                 <motion.button className="btn btn-secondary" onClick={() => generatePDF(year)} disabled={students.length === 0} whileHover={{ scale: 1.03 }} style={{ fontSize: '13px' }}>
-                    <FileDown size={14} /> Download Year {year} PDF
+                    <FileDown size={14} /> <span className="hide-mobile">Download Year {year} PDF</span>
+                    <span className="mobile-only">PDF</span>
                 </motion.button>
             </div>
-            <div className="card no-padding">
+
+            {/* Desktop Table View */}
+            <div className="card no-padding hide-mobile">
                 <div className="table-responsive">
                     <table className="data-table">
                         <thead>
@@ -179,13 +182,48 @@ export default function HODAttendance() {
                                     </td>
                                 </tr>
                             ))}
-                            {students.length === 0 && (
-                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No students found for Year {year}.</td></tr>
-                            )}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {students.map(s => (
+                    <motion.div key={s.id} className="card" style={{ padding: '16px', borderLeft: `4px solid ${s.isLow ? '#ef4444' : 'var(--primary-500)'}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <div>
+                                <h4 style={{ fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {s.name}
+                                    {s.isLow && <AlertTriangle size={14} color="#ef4444" />}
+                                </h4>
+                                <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '2px' }}>{s.reg_no}</p>
+                            </div>
+                            <span className={`pct-badge ${s.isLow ? 'low' : 'ok'}`} style={{ fontSize: '16px' }}>{s.percentage}%</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: 'var(--bg-tertiary)', padding: '10px', borderRadius: 'var(--radius-md)' }}>
+                            <div style={{ textAlign: 'center' }}>
+                                <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Present</p>
+                                <p style={{ fontSize: '14px', fontWeight: 700, color: '#10b981' }}>{s.presentDays}</p>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Absent</p>
+                                <p style={{ fontSize: '14px', fontWeight: 700, color: '#ef4444' }}>{s.absentDays}</p>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Total</p>
+                                <p style={{ fontSize: '14px', fontWeight: 700 }}>{s.totalDays}</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+
+            {students.length === 0 && (
+                <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No students found for Year {year}.
+                </div>
+            )}
         </div>
     );
 

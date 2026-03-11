@@ -156,13 +156,15 @@ export default function MyMarks() {
 
                     <motion.div variants={itemVariants} className="marks-card-premium">
                         <div className="card-header">
-                            <h3>{viewMode === 'internal' ? 'Internal Assessment' : 'Semester Final Results'}</h3>
-                            <button className="btn-icon-text">
+                            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>{viewMode === 'internal' ? 'Internal Assessment' : 'Semester Final Results'}</h3>
+                            <button className="btn-icon-text hide-mobile">
                                 <Download size={16} />
                                 Export PDF
                             </button>
                         </div>
-                        <div className="table-responsive">
+                        
+                        {/* Desktop View */}
+                        <div className="table-responsive hide-mobile">
                             <table className="premium-table">
                                 <thead>
                                     <tr>
@@ -239,6 +241,63 @@ export default function MyMarks() {
                                     </AnimatePresence>
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* Mobile View */}
+                        <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px' }}>
+                            {filteredMarks.map((m, i) => {
+                                const total = (m.internal_marks || 0) + (m.external_marks || 0);
+                                const grade = getGrade(total);
+                                return (
+                                    <motion.div 
+                                        key={i} 
+                                        className="card" 
+                                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '16px' }}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.05 }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                            <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', maxWidth: '70%' }}>{m.subject}</h4>
+                                            {viewMode === 'semester' && (
+                                                <span className="grade-badge" style={{ background: `${gradeColors[grade]}20`, color: gradeColors[grade] }}>
+                                                    {grade}
+                                                </span>
+                                            )}
+                                            {viewMode === 'internal' && (
+                                                <span className={`badge-status ${m.internal_marks >= 25 ? 'success' : 'warning'}`}>
+                                                    {m.internal_marks >= 25 ? 'Ready' : 'Entry'}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Internal</p>
+                                                <p style={{ fontSize: '16px', fontWeight: 700 }}>{m.internal_marks || 0}</p>
+                                            </div>
+                                            {viewMode === 'semester' && (
+                                                <>
+                                                    <div style={{ textAlign: 'center' }}>
+                                                        <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>External</p>
+                                                        <p style={{ fontSize: '16px', fontWeight: 700 }}>{m.external_marks || '—'}</p>
+                                                    </div>
+                                                    <div style={{ textAlign: 'center' }}>
+                                                        <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total</p>
+                                                        <p className={`total-score ${total >= 50 ? 'pass' : 'fail'}`} style={{ fontSize: '20px' }}>{total || '—'}</p>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                            
+                            {filteredMarks.length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                                    No marks found for Semester {selectedSemester}
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 </>

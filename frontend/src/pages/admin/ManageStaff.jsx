@@ -118,69 +118,144 @@ export default function ManageStaff() {
                 </div>
             </motion.div>
 
-            {/* Staff Table */}
-            <motion.div variants={itemVariants} className="card" style={{ marginTop: '20px', padding: 0, overflow: 'hidden' }}>
-                <div className="table-responsive">
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Department / Class</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredStaff.map((member, i) => (
-                                <motion.tr
-                                    key={member.id}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.05 }}
-                                >
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div style={{
-                                                width: '34px', height: '34px', borderRadius: 'var(--radius-full)',
-                                                background: 'linear-gradient(135deg, var(--primary-500), #7c3aed)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: 'white', fontWeight: 700, fontSize: '13px', flexShrink: 0,
-                                            }}>
-                                                {member.name.charAt(0)}
+            {/* Staff List (Desktop Table & Mobile Cards) */}
+            <motion.div variants={itemVariants} style={{ marginTop: '20px' }}>
+                {/* Desktop View (Table) */}
+                <div className="card hide-mobile" style={{ padding: 0, overflow: 'hidden' }}>
+                    <div className="table-responsive">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Department / Class</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredStaff.map((member, i) => (
+                                    <motion.tr
+                                        key={member.id}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: i * 0.05 }}
+                                    >
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{
+                                                    width: '34px', height: '34px', borderRadius: 'var(--radius-full)',
+                                                    background: 'linear-gradient(135deg, var(--primary-500), #7c3aed)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: 'white', fontWeight: 700, fontSize: '13px', flexShrink: 0,
+                                                }}>
+                                                    {member.name.charAt(0)}
+                                                </div>
+                                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{member.name}</span>
                                             </div>
-                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{member.name}</span>
-                                        </div>
-                                    </td>
-                                    <td>{member.email}</td>
-                                    <td>
-                                        <span className={`badge ${member.role === 'hod' ? 'badge-primary' : member.role === 'principal' ? 'badge-warning' : 'badge-success'}`}>
-                                            {member.role.toUpperCase()}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {member.dept_code || member.department_name || 'N/A'}
-                                        {member.year && <span style={{ marginLeft: '8px', color: 'var(--primary-500)', fontWeight: 600 }}>Year {member.year}</span>}
-                                    </td>
-                                    <td><span className="badge badge-success">Active</span></td>
-                                    <td>
-                                        <motion.button
-                                            className="btn btn-ghost btn-sm"
-                                            onClick={() => handleDelete(member.id)}
-                                            whileHover={{ scale: 1.1 }}
-                                            whileTap={{ scale: 0.9 }}
-                                            style={{ color: 'var(--danger-500)' }}
-                                        >
-                                            <Trash2 size={15} />
-                                        </motion.button>
-                                    </td>
-                                </motion.tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                        </td>
+                                        <td>{member.email}</td>
+                                        <td>
+                                            <span className={`badge ${member.role === 'hod' ? 'badge-primary' : member.role === 'principal' ? 'badge-warning' : 'badge-success'}`}>
+                                                {member.role.toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {member.dept_code || member.department_name || 'N/A'}
+                                            {member.year && <span style={{ marginLeft: '8px', color: 'var(--primary-500)', fontWeight: 600 }}>Year {member.year}</span>}
+                                        </td>
+                                        <td><span className="badge badge-success">Active</span></td>
+                                        <td>
+                                            <motion.button
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={() => handleDelete(member.id)}
+                                                whileHover={{ scale: 1.1 }}
+                                                whileTap={{ scale: 0.9 }}
+                                                style={{ color: 'var(--danger-500)' }}
+                                            >
+                                                <Trash2 size={15} />
+                                            </motion.button>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
+                {/* Mobile View (Cards) */}
+                <div className="mobile-only" style={{ display: 'none' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {filteredStaff.map((member, i) => (
+                            <motion.div 
+                                key={member.id} 
+                                className="card" 
+                                initial={{ opacity: 0, y: 10 }} 
+                                animate={{ opacity: 1, y: 0 }} 
+                                transition={{ delay: i * 0.05 }}
+                                style={{ padding: '16px' }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <div style={{
+                                            width: '40px', height: '40px', borderRadius: 'var(--radius-full)',
+                                            background: 'linear-gradient(135deg, var(--primary-500), #7c3aed)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: 'white', fontWeight: 700, fontSize: '15px'
+                                        }}>
+                                            {member.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontSize: '15px', fontWeight: 700 }}>{member.name}</h4>
+                                            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{member.email}</p>
+                                        </div>
+                                    </div>
+                                    <span className={`badge ${member.role === 'hod' ? 'badge-primary' : member.role === 'principal' ? 'badge-warning' : 'badge-success'}`}>
+                                        {member.role.toUpperCase()}
+                                    </span>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', padding: '12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-tertiary)', marginBottom: '12px' }}>
+                                    <div>
+                                        <p style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>Department / Class</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 600 }}>{member.dept_code || member.department_name || 'N/A'}</span>
+                                            {member.year && <span className="badge badge-primary" style={{ fontSize: '10px' }}>Year {member.year}</span>}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span className="badge badge-success">Active</span>
+                                    </div>
+                                    <button 
+                                        className="btn btn-danger btn-sm" 
+                                        onClick={() => handleDelete(member.id)}
+                                        style={{ minWidth: '100px' }}
+                                    >
+                                        <Trash2 size={14} /> Remove
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+
+                {filteredStaff.length === 0 && !loading && (
+                    <div style={{ textAlign: 'center', padding: '60px 40px', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                        <p>No staff members found matching your search.</p>
+                    </div>
+                )}
             </motion.div>
+
+            <style>{`
+                @media (max-width: 768px) {
+                    .hide-mobile { display: none !important; }
+                    .mobile-only { display: block !important; }
+                }
+            `}</style>
 
             {/* Add Staff Modal */}
             <AnimatePresence>
