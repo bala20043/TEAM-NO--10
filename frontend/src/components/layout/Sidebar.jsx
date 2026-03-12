@@ -437,6 +437,17 @@ export default function Sidebar() {
 
         .mobile-sidebar {
           width: 280px !important;
+          padding-top: env(safe-area-inset-top, 20px);
+          padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        .mobile-sidebar .sidebar-brand {
+          padding-top: 32px; /* Extra space for mobile brand */
+          align-items: center;
+        }
+
+        .mobile-sidebar .sidebar-footer {
+          padding-bottom: 32px; /* Extra space for bottom navigation */
         }
 
         @media (max-width: 768px) {
@@ -444,6 +455,16 @@ export default function Sidebar() {
           .mobile-menu-toggle { display: flex; }
           .sidebar-mobile-overlay { display: block; }
           .sidebar-collapse-btn { display: none; }
+          
+          /* Ensure better vertical alignment for logo and text */
+          .sidebar-brand {
+            gap: 16px;
+          }
+          
+          .sidebar-brand-text h2 {
+            font-size: 20px;
+            margin-bottom: 2px;
+          }
         }
       `}</style>
     </>
