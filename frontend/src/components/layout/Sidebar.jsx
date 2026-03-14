@@ -40,11 +40,6 @@ const roleMenus = {
     { path: '/staff/college-announcements', icon: Megaphone, label: 'College Notices' },
     { path: '/staff/attendance', icon: ClipboardList, label: 'Attendance' },
     { path: '/staff/marks', icon: FileText, label: 'Marks' },
-    { path: '/staff/subjects', icon: BookOpen, label: 'Subjects' },
-    { path: '/staff/students', icon: GraduationCap, label: 'Students' },
-    { path: '/staff/announcements', icon: Bell, label: 'Dept Notices' },
-    { path: '/staff/reports', icon: BarChart3, label: 'Reports' },
-    { path: '/staff/documents', icon: Upload, label: 'Documents' },
     { path: '/staff/chat', icon: MessageSquare, label: 'Student Chat' },
   ],
   student: [

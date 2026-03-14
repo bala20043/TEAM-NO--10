@@ -128,12 +128,12 @@ function App() {
               <Route index element={<StaffDashboard />} />
               <Route path="attendance" element={<StaffRoleRouter staffElement={<TakeAttendance />} hodElement={<HODAttendance />} />} />
               <Route path="marks" element={<ProtectedRoute allowedRoles={['hod', 'staff']}><StaffRoleRouter staffElement={<UploadMarks />} hodElement={<HODMarks />} /></ProtectedRoute>} />
-              <Route path="subjects" element={<ManageSubjects />} />
-              <Route path="students" element={<StaffRoleRouter staffElement={<ManageStudents />} hodElement={<HODStudents />} />} />
-              <Route path="announcements" element={<StaffRoleRouter staffElement={<AdminAnnouncements />} hodElement={<HODAnnouncements />} />} />
+              <Route path="subjects" element={<ProtectedRoute allowedRoles={['hod', 'principal']}><ManageSubjects /></ProtectedRoute>} />
+              <Route path="students" element={<ProtectedRoute allowedRoles={['hod', 'principal']}><StaffRoleRouter staffElement={<ManageStudents />} hodElement={<HODStudents />} /></ProtectedRoute>} />
+              <Route path="announcements" element={<ProtectedRoute allowedRoles={['hod', 'principal']}><StaffRoleRouter staffElement={<AdminAnnouncements />} hodElement={<HODAnnouncements />} /></ProtectedRoute>} />
               <Route path="college-announcements" element={<CollegeAnnouncements />} />
-              <Route path="reports" element={<ProtectedRoute allowedRoles={['staff']}><Reports /></ProtectedRoute>} />
-              <Route path="documents" element={<ProtectedRoute allowedRoles={['staff']}><UploadDocuments /></ProtectedRoute>} />
+              <Route path="reports" element={<ProtectedRoute allowedRoles={['hod', 'principal']}><Reports /></ProtectedRoute>} />
+              <Route path="documents" element={<ProtectedRoute allowedRoles={['hod', 'principal']}><UploadDocuments /></ProtectedRoute>} />
               <Route path="chat" element={<StaffChat />} />
             </Route>
 

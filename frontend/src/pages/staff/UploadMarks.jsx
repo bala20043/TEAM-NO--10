@@ -10,7 +10,7 @@ import { studentAPI, marksAPI, subjectsAPI } from '../../services/api';
 export default function UploadMarks() {
     const { user } = useAuth();
 
-    const isBasicEng = user?.department_id === 1;
+    const isBasicEng = user?.department?.name?.toLowerCase().includes('basic');
     const allowedSemesters = isBasicEng ? [1, 2] : [3, 4, 5, 6, 7, 8];
 
     const [semester, setSemester] = useState(allowedSemesters[0]);

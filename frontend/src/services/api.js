@@ -112,7 +112,7 @@ export const adminAPI = {
                 // Link
                 const { error: linkError } = await supabase
                     .from('users')
-                    .update({ auth_id: authData.user.id, role: userData.role, department_id: userData.department_id })
+                    .update({ auth_id: authData.user.id, role: userData.role, department_id: userData.department_id, year: userData.year || null })
                     .eq('id', existingProfile.id);
                 if (linkError) throw linkError;
             } else {
@@ -124,7 +124,8 @@ export const adminAPI = {
                         name: userData.name,
                         email: userData.email,
                         role: userData.role,
-                        department_id: userData.department_id
+                        department_id: userData.department_id,
+                        year: userData.year || null
                     });
                 if (profileError) throw profileError;
             }

@@ -10,7 +10,7 @@ export default function ManageSubjects() {
   // Logic for allowed semesters: 
   // Basic Engineering (ID: 1) -> Sem 1 & 2
   // Others -> Sem 3 to 8
-  const isBasicEng = user?.department_id === 1;
+  const isBasicEng = user?.department?.name?.toLowerCase().includes('basic');
   const allowedSemesters = isBasicEng ? [1, 2] : [3, 4, 5, 6, 7, 8];
 
   const [semester, setSemester] = useState(allowedSemesters[0]);
