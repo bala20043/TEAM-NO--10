@@ -77,9 +77,16 @@ export function AuthProvider({ children }) {
 
             if (error) {
                 console.error('Error fetching profile:', error);
+            } else if (data) {
+                // Formatting for consistency across the app
+                const formattedUser = {
+                    ...data,
+                    department_name: data.department?.name || null,
+                };
+                console.log('Setting user state:', formattedUser?.role);
+                setUser(formattedUser);
             } else {
-                console.log('Setting user state:', data?.role);
-                setUser(data);
+                setUser(null);
             }
         } catch (err) {
             console.error('Profile fetch crash:', err);

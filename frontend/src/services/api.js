@@ -100,6 +100,13 @@ export const adminAPI = {
                 password: userData.password,
             });
             if (authError) throw authError;
+            
+            if (!authData?.user?.id) {
+                throw new Error("Email may already be registered or invalid.");
+            }
+
+            const deptId = userData.department_id ? parseInt(userData.department_id, 10) : null;
+            const assignedYear = userData.year ? parseInt(userData.year, 10) : null;
 
             // 2. Check if profile already exists (maybe seeded)
             const { data: existingProfile } = await supabase
@@ -112,7 +119,7 @@ export const adminAPI = {
                 // Link
                 const { error: linkError } = await supabase
                     .from('users')
-                    .update({ auth_id: authData.user.id, role: userData.role, department_id: userData.department_id, year: userData.year || null })
+                    .update({ auth_id: authData.user.id, role: userData.role, department_id: deptId, year: assignedYear })
                     .eq('id', existingProfile.id);
                 if (linkError) throw linkError;
             } else {
@@ -124,8 +131,8 @@ export const adminAPI = {
                         name: userData.name,
                         email: userData.email,
                         role: userData.role,
-                        department_id: userData.department_id,
-                        year: userData.year || null
+                        department_id: deptId,
+                        year: assignedYear
                     });
                 if (profileError) throw profileError;
             }
@@ -143,7 +150,14 @@ export const adminAPI = {
         }
         const { data, error } = await query;
         if (error) throw error;
-        return { users: data };
+        
+        // Map the joined department name to the expected flat field
+        const formatted = data.map(user => ({
+            ...user,
+            department_name: user.department?.name || null
+        }));
+        
+        return { users: formatted };
     },
     deleteUser: async (id) => {
         const { error } = await supabase.from('users').delete().eq('id', id);
