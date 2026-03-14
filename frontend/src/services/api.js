@@ -75,6 +75,7 @@ export const authAPI = {
                 department_id: userData.department_id,
                 year: userData.year,
                 batch: userData.batch,
+                status: 'pending' // Require admin approval
             });
         if (studentError) throw studentError;
 
@@ -175,11 +176,47 @@ export const adminAPI = {
         return { message: res.message };
     },
     getPendingStudents: async () => {
-        // Note: Missing 'approval_status' in schema, assuming all are approved for now
-        return { students: [] };
+        const { data, error } = await supabase
+            .from('students')
+            .select(`
+                *,
+                users!inner(name, email),
+                departments(name)
+            `)
+            .eq('status', 'pending');
+        
+        if (error) throw error;
+        
+        const formatted = data.map(s => ({
+            ...s,
+            name: s.users.name,
+            email: s.users.email,
+            department_name: s.departments?.name
+        }));
+        
+        return { students: formatted };
     },
-    approveStudent: async (id) => { return { message: 'Approved' }; },
-    rejectStudent: async (id) => { return { message: 'Rejected' }; },
+    approveStudent: async (id) => { 
+        const { error } = await supabase.from('students').update({ status: 'active' }).eq('id', id);
+        if (error) throw error;
+        return { message: 'Approved' }; 
+    },
+    rejectStudent: async (id) => { 
+        // Get user_id first
+        const { data, error: fetchErr } = await supabase.from('students').select('user_id').eq('id', id).single();
+        if (fetchErr) throw fetchErr;
+
+        // Delete student record
+        const { error: delStudent } = await supabase.from('students').delete().eq('id', id);
+        if (delStudent) throw delStudent;
+
+        // Delete user profile
+        if (data?.user_id) {
+            await supabase.from('users').delete().eq('id', data.user_id);
+        }
+
+        return { message: 'Rejected' }; 
+    },
 };
 
 // Departments
@@ -463,7 +500,43 @@ export const documentAPI = {
 // Messages
 export const messageAPI = {
     getChatList: async () => {
-        return { chats: [] }; // Simplified for now
+        const currentUser = await getCurrentUserId();
+        
+        if (currentUser.role === 'student') {
+            // Student gets staff in their department
+            const { data: studentData, error: studentError } = await supabase
+                .from('students')
+                .select('department_id')
+                .eq('user_id', currentUser.id)
+                .single();
+            if (studentError) throw studentError;
+
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, name, email, role')
+                .in('role', ['staff', 'hod', 'principal'])
+                .eq('department_id', studentData.department_id);
+            if (error) throw error;
+            return { contacts: data.map(c => ({...c, unreadCount: 0})) };
+        } else {
+            // Staff gets active students in their department
+            const { data, error } = await supabase
+                .from('students')
+                .select('user_id, reg_no, users!inner(name, email)')
+                .eq('department_id', currentUser.department_id)
+                .eq('status', 'active');
+            if (error) throw error;
+            return { 
+                contacts: data.map(s => ({
+                    id: s.user_id,
+                    name: s.users.name,
+                    email: s.users.email,
+                    reg_no: s.reg_no,
+                    role: 'student',
+                    unreadCount: 0
+                }))
+            };
+        }
     },
     getHistory: async (userId) => {
         const currentUser = await getCurrentUserId();

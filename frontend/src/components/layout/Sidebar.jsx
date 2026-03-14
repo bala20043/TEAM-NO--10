@@ -38,9 +38,13 @@ const roleMenus = {
   staff: [
     { path: '/staff', icon: LayoutDashboard, label: 'Dashboard', end: true },
     { path: '/staff/college-announcements', icon: Megaphone, label: 'College Notices' },
+    { path: '/staff/announcements', icon: Bell, label: 'Dept Notices' },
     { path: '/staff/attendance', icon: ClipboardList, label: 'Attendance' },
     { path: '/staff/marks', icon: FileText, label: 'Marks' },
+    { path: '/staff/subjects', icon: BookOpen, label: 'Subjects' },
+    { path: '/staff/documents', icon: Upload, label: 'Documents' },
     { path: '/staff/chat', icon: MessageSquare, label: 'Student Chat' },
+    { path: '/staff/profile', icon: User, label: 'My Profile' },
   ],
   student: [
     { path: '/student', icon: LayoutDashboard, label: 'Dashboard', end: true },
