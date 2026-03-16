@@ -8,7 +8,7 @@ const getCurrentUserId = async () => {
     // 1. Try matching by auth UUID
     let { data: user, error } = await supabase
         .from('users')
-        .select('id, role')
+        .select('id, role, department_id, year')
         .eq('auth_id', session.user.id)
         .maybeSingle();
 
@@ -27,7 +27,7 @@ const getCurrentUserId = async () => {
                 .from('users')
                 .update({ auth_id: session.user.id })
                 .eq('id', emailMatch.id)
-                .select('id, role')
+                .select('id, role, department_id, year')
                 .single();
             user = linked;
         }
@@ -201,7 +201,8 @@ export const adminAPI = {
         if (error) throw error;
         return { message: 'Approved' }; 
     },
-    rejectStudent: async (id) => { 
+    rejectStudent: async (id) => adminAPI.deleteStudent(id),
+    deleteStudent: async (id) => { 
         // Get user_id first
         const { data, error: fetchErr } = await supabase.from('students').select('user_id').eq('id', id).single();
         if (fetchErr) throw fetchErr;
@@ -215,7 +216,7 @@ export const adminAPI = {
             await supabase.from('users').delete().eq('id', data.user_id);
         }
 
-        return { message: 'Rejected' }; 
+        return { message: 'Deleted' }; 
     },
 };
 
@@ -303,9 +304,37 @@ export const studentAPI = {
 // Staff Stats
 export const staffAPI = {
     getStats: async () => {
-        const currentUser = await getCurrentUserId();
-        // Assuming HOD logic based on role
-        return { stats: { studentsCount: 0, classesToday: 0, pendingTasks: 0 } };
+        const user = await getCurrentUserId();
+        const isPrincipal = user.role === 'principal';
+        const isHOD = user.role === 'hod';
+
+        if (isPrincipal) {
+            const [{ count: students }, { count: staff }, { count: depts }, { data: att }] = await Promise.all([
+                supabase.from('students').select('*', { count: 'exact', head: true }),
+                supabase.from('users').select('*', { count: 'exact', head: true }).in('role', ['staff', 'hod']),
+                supabase.from('departments').select('*', { count: 'exact', head: true }),
+                supabase.from('attendance').select('status').eq('date', new Date().toISOString().split('T')[0])
+            ]);
+            const present = att?.filter(a => a.status === 'present').length || 0;
+            const attPerc = att?.length > 0 ? Math.round((present / att.length) * 100) : 0;
+            return { isPrincipal: true, totalStudents: students, totalStaff: staff, totalDepts: depts, todayAttendance: `${attPerc}%` };
+        }
+
+        if (isHOD) {
+            const [{ count: students }, { count: ann }] = await Promise.all([
+                supabase.from('students').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id),
+                supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id)
+            ]);
+            return { isHOD: true, totalStudents: students, announcements: ann, year2Attendance: '0%', year3Attendance: '0%' };
+        }
+
+        // Regular Staff
+        const [{ count: students }, { count: marks }, { count: ann }] = await Promise.all([
+            supabase.from('students').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id).eq('year', user.year),
+            supabase.from('marks').select('*', { count: 'exact', head: true }).eq('uploaded_by', user.id),
+            supabase.from('announcements').select('*', { count: 'exact', head: true }).or(`department_id.eq.${user.department_id},type.eq.college`)
+        ]);
+        return { totalStudents: students, todayAttendance: '0%', pendingMarks: marks, announcements: ann };
     },
 };
 
@@ -344,7 +373,22 @@ export const attendanceAPI = {
     getDeptAttendance: async (deptId, date, year) => attendanceAPI.getByDept(deptId, date), // Simplified
     getMyAttendance: async () => {
         const { profile } = await studentAPI.getProfile();
-        return attendanceAPI.getByStudent(profile.id);
+        const { data: records, error } = await supabase.from('attendance').select('*').eq('student_id', profile.id);
+        if (error) throw error;
+        
+        const total = records.length;
+        const present = records.filter(d => d.status === 'present').length;
+        const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+        
+        return { 
+            attendance: records, 
+            stats: { 
+                percentage, 
+                totalDays: total, 
+                presentDays: present, 
+                absentDays: total - present 
+            } 
+        };
     },
     getStats: async (studentId) => {
         const { data, error } = await supabase.from('attendance').select('status').eq('student_id', studentId);
@@ -373,7 +417,9 @@ export const marksAPI = {
     },
     getMyMarks: async () => {
         const { profile } = await studentAPI.getProfile();
-        return marksAPI.getByStudent(profile.id);
+        const { data: marks, error } = await supabase.from('marks').select('*').eq('student_id', profile.id);
+        if (error) throw error;
+        return { marks };
     },
     getDeptMarks: async (deptId, year, examType) => {
         const { data, error } = await supabase.from('marks').select('*, students!inner(department_id, year)');

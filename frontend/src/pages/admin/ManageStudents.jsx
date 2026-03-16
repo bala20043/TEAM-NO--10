@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Eye, Archive, CheckCircle2, UserX, X, Loader2, Building2 } from 'lucide-react';
+import { Search, Eye, Archive, CheckCircle2, UserX, X, Loader2, Building2, Trash2 } from 'lucide-react';
 import { adminAPI, studentAPI, departmentAPI } from '../../services/api';
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
@@ -80,6 +80,16 @@ export default function ManageStudents() {
             if (res.message) fetchPending();
         } catch (err) {
             alert('Rejection failed');
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!confirm('Are you sure you want to PERMANENTLY delete this student account? This cannot be undone.')) return;
+        try {
+            const res = await adminAPI.deleteStudent(id);
+            if (res.message) fetchData();
+        } catch (err) {
+            alert('Deletion failed');
         }
     };
 
@@ -290,9 +300,14 @@ export default function ManageStudents() {
                                                 <motion.button className="btn btn-ghost btn-sm" whileHover={{ scale: 1.1 }} onClick={() => setViewStudent(s)} title="View"><Eye size={15} style={{ color: 'var(--primary-400)' }} /></motion.button>
                                                 {!isPrincipal && (
                                                     tab === 'active' ? (
-                                                        <motion.button className="btn btn-ghost btn-sm" whileHover={{ scale: 1.1 }} onClick={() => handleArchive(s.id)} title={s.status === 'active' ? 'Archive' : 'Restore'}>
-                                                            <Archive size={15} style={{ color: s.status === 'active' ? 'var(--warning-500)' : 'var(--accent-500)' }} />
-                                                        </motion.button>
+                                                        <>
+                                                            <motion.button className="btn btn-ghost btn-sm" whileHover={{ scale: 1.1 }} onClick={() => handleArchive(s.id)} title={s.status === 'active' ? 'Archive' : 'Restore'}>
+                                                                <Archive size={15} style={{ color: s.status === 'active' ? 'var(--warning-500)' : 'var(--accent-500)' }} />
+                                                            </motion.button>
+                                                            <motion.button className="btn btn-ghost btn-sm" whileHover={{ scale: 1.1 }} onClick={() => handleDelete(s.id)} title="Delete Permanently">
+                                                                <Trash2 size={15} style={{ color: 'var(--danger-500)' }} />
+                                                            </motion.button>
+                                                        </>
                                                     ) : (
                                                         <>
                                                             <motion.button
@@ -375,10 +390,15 @@ export default function ManageStudents() {
                                     </button>
                                     {!isPrincipal && (
                                         tab === 'active' ? (
-                                            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => handleArchive(s.id)}>
-                                                <Archive size={14} style={{ color: s.status === 'active' ? 'var(--warning-500)' : 'var(--accent-500)' }} />
-                                                {s.status === 'active' ? 'Archive' : 'Restore'}
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '4px', flex: 1 }}>
+                                                <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => handleArchive(s.id)}>
+                                                    <Archive size={14} style={{ color: s.status === 'active' ? 'var(--warning-500)' : 'var(--accent-500)' }} />
+                                                    {s.status === 'active' ? 'Archive' : 'Restore'}
+                                                </button>
+                                                <button className="btn btn-danger btn-sm" style={{ flex: 1 }} onClick={() => handleDelete(s.id)}>
+                                                    <Trash2 size={14} /> Delete
+                                                </button>
+                                            </div>
                                         ) : (
                                             <div style={{ display: 'flex', gap: '4px', flex: 1 }}>
                                                 <button className="btn btn-success btn-sm" style={{ flex: 1 }} onClick={() => handleApprove(s.id)}>
