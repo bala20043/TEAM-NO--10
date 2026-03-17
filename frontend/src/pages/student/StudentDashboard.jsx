@@ -12,6 +12,7 @@ export default function StudentDashboard() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [attendanceStats, setAttendanceStats] = useState({ percentage: 0, totalDays: 0, presentDays: 0, absentDays: 0 });
+    const [collegeTotal, setCollegeTotal] = useState('0');
     const [monthlyData, setMonthlyData] = useState([]);
     const [pieData, setPieData] = useState([]);
     const [marksData, setMarksData] = useState([]);
@@ -23,11 +24,17 @@ export default function StudentDashboard() {
 
     const fetchDashboardData = async () => {
         try {
-            const [attendanceRes, marksRes, announcementRes] = await Promise.allSettled([
+            const [attendanceRes, marksRes, announcementRes, collegeStatsRes] = await Promise.allSettled([
                 attendanceAPI.getMyAttendance(),
                 marksAPI.getMyMarks(),
                 announcementAPI.getAll(),
+                supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active')
             ]);
+
+            // College Stats
+            if (collegeStatsRes.status === 'fulfilled' && collegeStatsRes.value.count !== undefined) {
+                setCollegeTotal(String(collegeStatsRes.value.count));
+            }
 
             // Attendance
             if (attendanceRes.status === 'fulfilled' && attendanceRes.value.stats) {
@@ -76,9 +83,9 @@ export default function StudentDashboard() {
     const subjectCount = marksData.length > 0 ? new Set(marksData.map(m => m.subject)).size : 0;
 
     const stats = [
-        { label: 'Attendance', value: `${attendanceStats.percentage}%`, icon: ClipboardList, color: '#10b981' },
-        { label: 'Subjects', value: `${subjectCount}`, icon: BookOpen, color: '#6366f1' },
-        { label: 'Announcements', value: `${announcements.length}`, icon: Bell, color: '#f59e0b' },
+        { label: 'College Total', value: collegeTotal, icon: Users, color: '#6366f1' },
+        { label: 'My Attendance', value: `${attendanceStats.percentage}%`, icon: ClipboardList, color: '#10b981' },
+        { label: 'Active Subjects', value: `${subjectCount}`, icon: BookOpen, color: '#f59e0b' },
         { label: 'Working Days', value: `${attendanceStats.totalDays}`, icon: TrendingUp, color: '#8b5cf6' },
     ];
 

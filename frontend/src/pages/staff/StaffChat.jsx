@@ -132,16 +132,41 @@ export default function StaffChat() {
                         </motion.div>
                     ))}
                     {filteredContacts.length === 0 && (
-                        <p style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                            No students found.
-                        </p>
+                        <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--text-muted)' }}>
+                            <User size={32} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto' }} />
+                            <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>No students found</p>
+                            <p style={{ fontSize: '12px', marginTop: '4px', lineHeight: '1.4' }}>
+                                Students must be <b>Approved</b> by the Admin before they appear here.
+                            </p>
+                            <button 
+                                onClick={() => fetchContacts()}
+                                className="btn btn-ghost btn-sm"
+                                style={{ marginTop: '16px', color: 'var(--primary-400)', border: '1px solid var(--border-color)', width: '100%' }}
+                            >
+                                Refresh List
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* Main Chat Area */}
             <div className="chat-main">
-                {selectedContact ? (
+                {contacts.length === 0 ? (
+                    <div className="chat-empty">
+                        <div style={{ position: 'relative', marginBottom: '24px' }}>
+                            <User size={64} style={{ opacity: 0.1 }} />
+                            <Clock size={24} style={{ position: 'absolute', bottom: 0, right: 0, color: 'var(--primary-400)' }} />
+                        </div>
+                        <h3>Waiting for Students</h3>
+                        <p style={{ maxWidth: '300px', margin: '0 auto 20px' }}>
+                            Once students register and are <b>Approved</b> by the Administrator, they will appear in your contact list on the left.
+                        </p>
+                        <div className="security-notice">
+                            <Shield size={16} /> Secure communication will be enabled after approval.
+                        </div>
+                    </div>
+                ) : selectedContact ? (
                     <>
                         <div className="chat-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

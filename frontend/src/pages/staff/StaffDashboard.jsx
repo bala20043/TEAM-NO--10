@@ -62,20 +62,20 @@ export default function StaffDashboard() {
     };
 
     const stats = statsData?.isPrincipal ? [
-        { label: 'Total Students', value: statsData?.totalStudents || '0', icon: Users, color: '#6366f1', change: 'Across all depts' },
+        { label: 'College Total', value: statsData?.totalStudents || '0', icon: Users, color: '#6366f1', change: 'Across all depts' },
         { label: 'Total Faculty', value: statsData?.totalStaff || '0', icon: Award, color: '#10b981', change: 'HODs & Staff' },
         { label: 'Departments', value: statsData?.totalDepts || '0', icon: Building2, color: '#f59e0b', change: 'Academic units' },
         { label: 'Overall Attendance', value: statsData?.todayAttendance || '0%', icon: ClipboardList, color: '#8b5cf6', change: 'College-wide' },
     ] : statsData?.isHOD ? [
-        { label: 'Dept Students', value: statsData?.totalStudents || '0', icon: Users, color: '#6366f1', change: 'Total enrolled' },
+        { label: 'College Total', value: statsData?.totalStudents || '0', icon: Users, color: '#6366f1', change: 'Total enrolled' },
+        { label: 'Dept Students', value: statsData?.deptStudents || '0', icon: GraduationCap, color: '#8b5cf6', change: 'In your department' },
         { label: 'Year 2 Attendance', value: statsData?.year2Attendance || '0%', icon: ClipboardList, color: '#10b981', change: 'Today' },
         { label: 'Year 3 Attendance', value: statsData?.year3Attendance || '0%', icon: ClipboardList, color: '#8b5cf6', change: 'Today' },
-        { label: 'Announcements', value: statsData?.announcements || '0', icon: Bell, color: '#ec4899', change: 'Active' },
     ] : [
-        { label: 'Total Students', value: statsData?.totalStudents || '0', icon: Users, color: '#6366f1', change: statsData ? 'Real-time' : 'Updating...' },
+        { label: 'College Total', value: statsData?.totalStudents || '0', icon: Users, color: '#6366f1', change: 'Total Strength' },
+        { label: 'Class Students', value: statsData?.classStudents || '0', icon: GraduationCap, color: '#8b5cf6', change: 'Your assigned year' },
         { label: "Today's Attendance", value: statsData?.todayAttendance || '0%', icon: ClipboardList, color: '#10b981', change: statsData ? 'Calculated' : '--' },
         { label: 'Pending Marks', value: statsData?.pendingMarks || '0', icon: FileText, color: '#f59e0b', change: 'Action Required' },
-        { label: 'Announcements', value: statsData?.announcements || '0', icon: Bell, color: '#ec4899', change: 'Latest' },
     ];
 
     const todayClasses = [

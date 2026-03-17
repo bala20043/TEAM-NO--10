@@ -89,7 +89,7 @@ export default function ManageStudents() {
             const res = await adminAPI.deleteStudent(id);
             if (res.message) fetchData();
         } catch (err) {
-            alert('Deletion failed');
+            alert('Deletion failed: ' + (err.message || 'Unknown error'));
         }
     };
 

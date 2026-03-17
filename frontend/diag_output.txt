@@ -1,0 +1,13 @@
+--- TARGETED DIAGNOSTIC ---
+STAFF RAVI:
+- ID: 53
+- Role: staff
+- Dept ID: 1
+- Year: 3
+STUDENT BALA (or similar):
+- Name: bala
+- ID: 17
+- Status: pending
+- Dept ID: 1
+- Year: 3
+DEPARTMENTS: ["1: Computer Science"]

@@ -119,11 +119,20 @@ export const authAPI = {
 // Admin
 export const adminAPI = {
     getStats: async () => {
-        const { count: teachers } = await supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'staff');
-        const { count: students } = await supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'student');
-        const { count: departments } = await supabase.from('departments').select('*', { count: 'exact', head: true });
+        const [{ count: teachers }, { count: students }, { count: departments }, { count: pending }] = await Promise.all([
+            supabase.from('users').select('*', { count: 'exact', head: true }).in('role', ['staff', 'hod']),
+            supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+            supabase.from('departments').select('*', { count: 'exact', head: true }),
+            supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'pending')
+        ]);
 
-        return { stats: { totalTeachers: teachers, totalStudents: students, departmentsCount: departments, recentActivities: [] } };
+        return { 
+            totalStaff: teachers, 
+            totalStudents: students, 
+            totalDepartments: departments, 
+            pendingApprovals: pending || 0,
+            attendanceRate: 0 
+        };
     },
     createUser: async (userData) => {
         try {
@@ -193,9 +202,12 @@ export const adminAPI = {
         return { users: formatted };
     },
     deleteUser: async (id) => {
-        const { error } = await supabase.from('users').delete().eq('id', id);
-        if (error) throw error;
-        return { message: 'User deleted' };
+        const { error } = await supabase.rpc('delete_user_by_admin', { target_user_id: id });
+        if (error) {
+            console.error('Delete User Error:', error);
+            throw new Error(error.message || 'Failed to delete user');
+        }
+        return { message: 'User deleted successfully' };
     },
     resetPassword: async (data, newPassword) => {
         const { data: res, error } = await supabase.rpc('admin_reset_password', { 
@@ -239,13 +251,16 @@ export const adminAPI = {
         const { data, error: fetchErr } = await supabase.from('students').select('user_id').eq('id', id).single();
         if (fetchErr) throw fetchErr;
 
-        // Delete student record
-        const { error: delStudent } = await supabase.from('students').delete().eq('id', id);
-        if (delStudent) throw delStudent;
-
-        // Delete user profile
         if (data?.user_id) {
-            await supabase.from('users').delete().eq('id', data.user_id);
+            const { error } = await supabase.rpc('delete_user_by_admin', { target_user_id: data.user_id });
+            if (error) {
+                console.error('Delete Student Error:', error);
+                throw new Error(error.message || 'Failed to delete student');
+            }
+        } else {
+            // Fallback for students without user profile
+            const { error: delErr } = await supabase.from('students').delete().eq('id', id);
+            if (delErr) throw delErr;
         }
 
         return { message: 'Deleted' }; 
@@ -340,33 +355,35 @@ export const staffAPI = {
         const isPrincipal = user.role === 'principal';
         const isHOD = user.role === 'hod';
 
+        // Always get total college strength
+        const { count: collegeTotal } = await supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active');
+
         if (isPrincipal) {
-            const [{ count: students }, { count: staff }, { count: depts }, { data: att }] = await Promise.all([
-                supabase.from('students').select('*', { count: 'exact', head: true }),
+            const [{ count: staff }, { count: depts }, { data: att }] = await Promise.all([
                 supabase.from('users').select('*', { count: 'exact', head: true }).in('role', ['staff', 'hod']),
                 supabase.from('departments').select('*', { count: 'exact', head: true }),
                 supabase.from('attendance').select('status').eq('date', new Date().toISOString().split('T')[0])
             ]);
             const present = att?.filter(a => a.status === 'present').length || 0;
             const attPerc = att?.length > 0 ? Math.round((present / att.length) * 100) : 0;
-            return { isPrincipal: true, totalStudents: students, totalStaff: staff, totalDepts: depts, todayAttendance: `${attPerc}%` };
+            return { isPrincipal: true, totalStudents: collegeTotal, totalStaff: staff, totalDepts: depts, todayAttendance: `${attPerc}%` };
         }
 
         if (isHOD) {
-            const [{ count: students }, { count: ann }] = await Promise.all([
-                supabase.from('students').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id),
+            const [{ count: deptStudents }, { count: ann }] = await Promise.all([
+                supabase.from('students').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id).eq('status', 'active'),
                 supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id)
             ]);
-            return { isHOD: true, totalStudents: students, announcements: ann, year2Attendance: '0%', year3Attendance: '0%' };
+            return { isHOD: true, totalStudents: collegeTotal, deptStudents: deptStudents, announcements: ann, year2Attendance: '0%', year3Attendance: '0%' };
         }
 
         // Regular Staff
-        const [{ count: students }, { count: marks }, { count: ann }] = await Promise.all([
-            supabase.from('students').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id).eq('year', user.year),
+        const [{ count: classStudents }, { count: marks }, { count: ann }] = await Promise.all([
+            supabase.from('students').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id).eq('year', user.year).eq('status', 'active'),
             supabase.from('marks').select('*', { count: 'exact', head: true }).eq('uploaded_by', user.id),
             supabase.from('announcements').select('*', { count: 'exact', head: true }).or(`department_id.eq.${user.department_id},type.eq.college`)
         ]);
-        return { totalStudents: students, todayAttendance: '0%', pendingMarks: marks, announcements: ann };
+        return { totalStudents: collegeTotal, classStudents: classStudents, todayAttendance: '0%', pendingMarks: marks, announcements: ann };
     },
 };
 
@@ -484,17 +501,61 @@ export const subjectsAPI = {
     getSubjects: async (params) => {
         const p = new URLSearchParams(params);
         let query = supabase.from('subjects').select('*');
-        if (p.get('department_id')) query = query.eq('department_id', p.get('department_id'));
+        
+        const deptId = p.get('department_id') || p.get('deptId');
+        if (deptId) query = query.eq('department_id', deptId);
+        
         if (p.get('year')) query = query.eq('year', p.get('year'));
         if (p.get('semester')) query = query.eq('semester', p.get('semester'));
+        
         const { data, error } = await query;
         if (error) throw error;
         return { subjects: data };
     },
     syncSubjects: async (data) => {
-        const { error } = await supabase.from('subjects').upsert(data.subjects, { onConflict: 'code,department_id' });
-        if (error) throw error;
-        return { message: 'Subjects synced' };
+        const department_id = data.department_id || data.deptId;
+        const { year, semester, subjects } = data;
+
+        if (!department_id) throw new Error('Department ID is required');
+
+        // 1. Transform string array into objects
+        const formattedSubjects = subjects.map(name => ({
+            name,
+            department_id,
+            year,
+            semester,
+            code: `${department_id}-${semester}-${name.toLowerCase().replace(/\s+/g, '-')}`.substring(0, 50)
+        }));
+
+        // 2. Perform synchronization
+        // First, get currently stored subjects for this slot to handle deletions
+        const { data: existing } = await supabase
+            .from('subjects')
+            .select('name')
+            .eq('department_id', department_id)
+            .eq('year', year)
+            .eq('semester', semester);
+
+        const existingNames = existing?.map(s => s.name) || [];
+        const toDelete = existingNames.filter(name => !subjects.includes(name));
+
+        if (toDelete.length > 0) {
+            await supabase
+                .from('subjects')
+                .delete()
+                .eq('department_id', department_id)
+                .eq('year', year)
+                .eq('semester', semester)
+                .in('name', toDelete);
+        }
+
+        // 3. Upsert the new list
+        if (formattedSubjects.length > 0) {
+            const { error } = await supabase.from('subjects').upsert(formattedSubjects, { onConflict: 'code,department_id' });
+            if (error) throw error;
+        }
+
+        return { message: 'Subjects synced successfully' };
     }
 };
 

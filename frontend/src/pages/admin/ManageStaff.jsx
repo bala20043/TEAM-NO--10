@@ -77,7 +77,7 @@ export default function ManageStaff() {
                 alert(result.error || 'Failed to delete user');
             }
         } catch (err) {
-            alert('Connection error');
+            alert('Deletion failed: ' + (err.message || 'Connection error'));
         }
     };
 
