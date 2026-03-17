@@ -83,6 +83,23 @@ export function AuthProvider({ children }) {
                     ...data,
                     department_name: data.department?.name || null,
                 };
+                
+                // New: Approval Check for Students
+                if (formattedUser.role === 'student') {
+                    const { data: student } = await supabase
+                        .from('students')
+                        .select('status')
+                        .eq('user_id', formattedUser.id)
+                        .maybeSingle();
+                    
+                    if (student?.status === 'pending') {
+                        console.warn('Student login blocked: Status pending');
+                        setUser(null);
+                        await supabase.auth.signOut();
+                        return; // Halt profile setup
+                    }
+                }
+
                 console.log('Setting user state:', formattedUser?.role);
                 setUser(formattedUser);
             } else {
@@ -98,6 +115,18 @@ export function AuthProvider({ children }) {
     const register = async (userData) => {
         try {
             setLoading(true);
+
+            // 0. Pre-check: Unique registration number
+            const { data: existingReg, error: regCheckErr } = await supabase
+                .from('students')
+                .select('id')
+                .eq('reg_no', userData.reg_no)
+                .maybeSingle();
+            
+            if (regCheckErr) throw regCheckErr;
+            if (existingReg) {
+                throw new Error(`Registration number ${userData.reg_no} is already in use.`);
+            }
 
             // 1. Create Auth User
             const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -159,6 +188,7 @@ export function AuthProvider({ children }) {
                     department_id: userData.department_id,
                     year: userData.year,
                     batch: userData.batch,
+                    status: 'pending'
                 });
 
             if (studentError) {
@@ -182,6 +212,27 @@ export function AuthProvider({ children }) {
         try {
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
+
+            // Fetch profile immediately to check approval status
+            const { data: profile } = await supabase
+                .from('users')
+                .select('id, role')
+                .eq('auth_id', data.user.id)
+                .single();
+
+            if (profile?.role === 'student') {
+                const { data: student } = await supabase
+                    .from('students')
+                    .select('status')
+                    .eq('user_id', profile.id)
+                    .single();
+                
+                if (student?.status === 'pending') {
+                    await supabase.auth.signOut();
+                    return { success: false, error: 'Your account is pending admin approval.' };
+                }
+            }
+
             return { success: true };
         } catch (err) {
             return { success: false, error: err.message };

@@ -149,8 +149,9 @@ export default function Navbar() {
           align-items: center;
           justify-content: space-between;
           padding: 20px 32px;
-          background: rgba(15, 23, 42, 0.4); /* Transparent with background showing through */
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+          padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
+          background: var(--nav-bg);
+          border-bottom: 1px solid var(--border-color);
           position: sticky;
           top: 0;
           z-index: 30;
@@ -245,15 +246,16 @@ export default function Navbar() {
 
         .notifications-dropdown {
           position: absolute;
-          top: 70px;
+          top: 80px;
           right: 32px;
-          width: 360px;
+          width: 380px;
           background: var(--bg-card);
           border: 1px solid var(--border-color);
           border-radius: var(--radius-lg);
           box-shadow: 0 20px 60px var(--shadow-color);
           z-index: 40;
           overflow: hidden;
+          margin-top: env(safe-area-inset-top, 0px);
         }
 
         .notifications-header {

@@ -18,7 +18,6 @@ const roleMenus = {
     { path: '/admin/announcements', icon: Bell, label: 'Alerts & Notices' },
     { path: '/admin/reset-password', icon: Shield, label: 'Reset Password' },
     { path: '/admin/backup', icon: Database, label: 'Database Backup' },
-    { path: '/staff/chat', icon: MessageSquare, label: 'Messages' },
   ],
   principal: [
     { path: '/staff', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -251,13 +250,15 @@ export default function Sidebar() {
           top: 0;
           left: 0;
           height: 100vh;
-          background: #020617; /* Deep Obsidian */
+          background: var(--bg-sidebar);
           display: flex;
           flex-direction: column;
           z-index: 50;
           overflow: hidden;
-          border-right: 1px solid rgba(255,255,255,0.03);
-          box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+          border-right: 1px solid var(--border-color);
+          box-shadow: 10px 0 30px var(--shadow-color);
+          padding-top: env(safe-area-inset-top, 0px);
+          padding-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         .sidebar-brand {
@@ -329,8 +330,8 @@ export default function Sidebar() {
 
         .sidebar-link.active {
           color: white;
-          background: rgba(139, 92, 246, 0.1);
-          border: 1px solid rgba(139, 92, 246, 0.2);
+          background: var(--primary-600);
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
         }
 
         .sidebar-active-indicator {

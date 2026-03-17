@@ -60,7 +60,7 @@ export default function LoginPage() {
           setError('Too many failed attempts. Security lockout active for 30 seconds.');
           setFailedAttempts(0); // Reset for next cycle
         } else {
-          setError('Invalid email or password'); // Generic message for security
+          setError(result.error || 'Invalid email or password');
         }
       } else {
         setFailedAttempts(0); // Clear on success

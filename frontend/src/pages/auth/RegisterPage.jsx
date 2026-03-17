@@ -112,8 +112,8 @@ export default function RegisterPage() {
                         Registration Successful!
                     </h2>
                     <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '32px' }}>
-                        Your account has been created! If you don't see an "Email not confirmed" error when logging in, you can start using the system immediately.
-                        Otherwise, please **check your email** for a confirmation link.
+                        Your registration request has been submitted successfully! 
+                        Please **wait for admin approval** before you can log in to your account.
                     </p>
                     <Link to="/login" className="btn btn-primary" style={{ width: '100%' }}>
                         Go to Login

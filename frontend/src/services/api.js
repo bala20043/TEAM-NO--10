@@ -42,9 +42,41 @@ export const authAPI = {
     login: async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) return { success: false, error: error.message };
+
+        // 3. New: Check Approval Status for Students
+        const { data: profile } = await supabase
+            .from('users')
+            .select('id, role')
+            .eq('auth_id', data.user.id)
+            .single();
+
+        if (profile?.role === 'student') {
+            const { data: student } = await supabase
+                .from('students')
+                .select('status')
+                .eq('user_id', profile.id)
+                .single();
+            
+            if (student?.status === 'pending') {
+                await supabase.auth.signOut();
+                return { success: false, error: 'Your account is pending admin approval.' };
+            }
+        }
+
         return { success: true, data };
     },
     register: async (userData) => {
+        // 0. Check if reg_no is unique
+        const { data: existingStudent } = await supabase
+            .from('students')
+            .select('id')
+            .eq('reg_no', userData.reg_no)
+            .maybeSingle();
+        
+        if (existingStudent) {
+            return { success: false, error: 'Registration number already exists.' };
+        }
+
         // 1. Create auth user
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: userData.email,
