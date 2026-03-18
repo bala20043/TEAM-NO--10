@@ -42,14 +42,16 @@ export default function ParentChat() {
     const fetchTeachers = async () => {
         try {
             const res = await messageAPI.getChatList();
+            console.log('[ParentChat] getChatList response:', res);
             if (res.contacts) {
+                console.log('[ParentChat] Found', res.contacts.length, 'contacts:', res.contacts.map(c => c.name));
                 setTeachers(res.contacts);
                 if (res.contacts.length > 0) {
                     setSelectedTeacher(res.contacts[0]);
                 }
             }
         } catch (err) {
-            console.error('Failed to fetch teachers:', err);
+            console.error('[ParentChat] Failed to fetch teachers:', err);
         } finally {
             setLoading(false);
         }
@@ -193,7 +195,10 @@ export default function ParentChat() {
                 ) : (
                     <div className="no-contacts">
                         <MessageSquare size={48} />
-                        <p>No class teacher has been assigned to your department/year yet.</p>
+                        <p>No contacts found in your department yet.</p>
+                        <p style={{ fontSize: '12px', marginTop: '8px', opacity: 0.7 }}>
+                            Tip: Once a staff member messages you, they will appear here automatically.
+                        </p>
                     </div>
                 )}
             </div>

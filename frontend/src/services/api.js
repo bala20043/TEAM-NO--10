@@ -640,42 +640,93 @@ export const documentAPI = {
 export const messageAPI = {
     getChatList: async () => {
         const currentUser = await getCurrentUserId();
+        console.log('[ChatList] Current user:', currentUser.id, currentUser.role, 'dept:', currentUser.department_id);
         
+        // 1. Fetch History Participants (Who we've messaged)
+        const { data: sentMsgs, error: sentErr } = await supabase.from('messages').select('receiver_id').eq('sender_id', currentUser.id);
+        const { data: recvMsgs, error: recvErr } = await supabase.from('messages').select('sender_id').eq('receiver_id', currentUser.id);
+        console.log('[ChatList] Sent msgs:', sentMsgs?.length, sentErr?.message || 'OK');
+        console.log('[ChatList] Recv msgs:', recvMsgs?.length, recvErr?.message || 'OK');
+        
+        const historyIds = Array.from(new Set([
+            ...(sentMsgs?.map(m => m.receiver_id) || []),
+            ...(recvMsgs?.map(m => m.sender_id) || [])
+        ]));
+        console.log('[ChatList] History IDs:', historyIds);
+
+        let contacts = [];
+
+        // 2. Fetch History User Details
+        if (historyIds.length > 0) {
+            const { data: historyUsers } = await supabase
+                .from('users')
+                .select('id, name, email, role, department_id')
+                .in('id', historyIds);
+            console.log('[ChatList] History users found:', historyUsers?.length);
+            if (historyUsers) contacts = [...historyUsers];
+        }
+
+        // 3. Discovery Logic (Role-Based)
         if (currentUser.role === 'student') {
-            // Student gets staff in their department
-            const { data: studentData, error: studentError } = await supabase
+            const { data: studentData, error: studErr } = await supabase
                 .from('students')
                 .select('department_id')
                 .eq('user_id', currentUser.id)
                 .single();
-            if (studentError) throw studentError;
+            console.log('[ChatList] Student dept_id:', studentData?.department_id, studErr?.message || 'OK');
 
-            const { data, error } = await supabase
+            // All staff in same dept
+            const { data: deptStaff, error: staffErr } = await supabase
                 .from('users')
                 .select('id, name, email, role')
-                .in('role', ['staff', 'hod', 'principal'])
-                .eq('department_id', studentData.department_id);
-            if (error) throw error;
-            return { contacts: data.map(c => ({...c, unreadCount: 0})) };
-        } else {
-            // Staff gets active students in their department
-            const { data, error } = await supabase
+                .in('role', ['staff', 'hod'])
+                .eq('department_id', studentData?.department_id);
+            console.log('[ChatList] Dept staff found:', deptStaff?.length, staffErr?.message || 'OK');
+            
+            // ALL Principals
+            const { data: principals } = await supabase
+                .from('users')
+                .select('id, name, email, role')
+                .eq('role', 'principal');
+            console.log('[ChatList] Principals found:', principals?.length);
+            
+            if (deptStaff) contacts = [...contacts, ...deptStaff];
+            if (principals) contacts = [...contacts, ...principals];
+        } else if (currentUser.role === 'staff') {
+            const { data: students } = await supabase
                 .from('students')
                 .select('user_id, reg_no, users!inner(name, email)')
                 .eq('department_id', currentUser.department_id)
                 .eq('status', 'active');
-            if (error) throw error;
-            return { 
-                contacts: data.map(s => ({
+            
+            if (students) {
+                contacts = [...contacts, ...students.map(s => ({
                     id: s.user_id,
                     name: s.users.name,
                     email: s.users.email,
                     reg_no: s.reg_no,
-                    role: 'student',
-                    unreadCount: 0
-                }))
-            };
+                    role: 'student'
+                }))];
+            }
+        } else if (currentUser.role === 'hod') {
+            const { data: staff } = await supabase
+                .from('users')
+                .select('id, name, email, role')
+                .eq('role', 'staff')
+                .eq('department_id', currentUser.department_id);
+            if (staff) contacts = [...contacts, ...staff];
+        } else if (currentUser.role === 'principal') {
+            const { data: hods } = await supabase
+                .from('users')
+                .select('id, name, email, role')
+                .eq('role', 'hod');
+            if (hods) contacts = [...contacts, ...hods];
         }
+
+        // 4. Map & Deduplicate
+        const uniqueContacts = Array.from(new Map(contacts.map(c => [c.id, c])).values());
+        console.log('[ChatList] FINAL contacts:', uniqueContacts.length, uniqueContacts.map(c => c.name));
+        return { contacts: uniqueContacts.map(c => ({ ...c, unreadCount: 0 })) };
     },
     getHistory: async (userId) => {
         const currentUser = await getCurrentUserId();

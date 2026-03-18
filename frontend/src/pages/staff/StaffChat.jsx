@@ -106,7 +106,7 @@ export default function StaffChat() {
                         <Search size={16} />
                         <input
                             type="text"
-                            placeholder="Search students..."
+                            placeholder={user?.role === 'staff' ? "Search students..." : user?.role === 'hod' ? "Search staff..." : "Search contacts..."}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -134,9 +134,11 @@ export default function StaffChat() {
                     {filteredContacts.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--text-muted)' }}>
                             <User size={32} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto' }} />
-                            <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>No students found</p>
+                            <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {user?.role === 'staff' ? 'No students found' : user?.role === 'hod' ? 'No staff found' : 'No contacts found'}
+                            </p>
                             <p style={{ fontSize: '12px', marginTop: '4px', lineHeight: '1.4' }}>
-                                Students must be <b>Approved</b> by the Admin before they appear here.
+                                Tip: Contacts appear here if they are in your department OR if you have an active message history with them.
                             </p>
                             <button 
                                 onClick={() => fetchContacts()}
@@ -158,9 +160,11 @@ export default function StaffChat() {
                             <User size={64} style={{ opacity: 0.1 }} />
                             <Clock size={24} style={{ position: 'absolute', bottom: 0, right: 0, color: 'var(--primary-400)' }} />
                         </div>
-                        <h3>Waiting for Students</h3>
+                        <h3>{user?.role === 'staff' ? 'Waiting for Students' : user?.role === 'hod' ? 'Waiting for Staff' : 'Waiting for Contacts'}</h3>
                         <p style={{ maxWidth: '300px', margin: '0 auto 20px' }}>
-                            Once students register and are <b>Approved</b> by the Administrator, they will appear in your contact list on the left.
+                            {user?.role === 'staff' 
+                                ? 'Once students register and are Approved by the Administrator, they will appear in your contact list.' 
+                                : `Once ${user?.role === 'hod' ? 'staff members' : 'HODs'} are assigned to your department, they will appear here.`}
                         </p>
                         <div className="security-notice">
                             <Shield size={16} /> Secure communication will be enabled after approval.
@@ -237,7 +241,7 @@ export default function StaffChat() {
                     <div className="chat-empty">
                         <MessageSquare size={64} style={{ opacity: 0.1, marginBottom: '20px' }} />
                         <h3>Your Conversations</h3>
-                        <p>Select a student from the list to start communicating securely.</p>
+                        <p>Select {user?.role === 'staff' ? 'a student' : user?.role === 'hod' ? 'a staff member' : 'a contact'} from the list to start communicating securely.</p>
                         <div className="security-notice">
                             <Shield size={16} /> All messages are encrypted and audited for security.
                         </div>

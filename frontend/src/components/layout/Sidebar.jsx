@@ -267,7 +267,7 @@ export default function Sidebar() {
           gap: 12px;
           padding: 24px 20px;
           margin-bottom: 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+          border-bottom: 1px solid var(--border-color);
         }
 
         .sidebar-logo {
@@ -286,7 +286,7 @@ export default function Sidebar() {
           font-family: 'Poppins', sans-serif;
           font-size: 18px;
           font-weight: 700;
-          color: white;
+          color: var(--text-primary);
           line-height: 1.2;
         }
 
@@ -323,13 +323,13 @@ export default function Sidebar() {
         }
 
         .sidebar-link:hover {
-          color: white;
-          background: rgba(255, 255, 255, 0.03);
+          color: var(--text-primary);
+          background: var(--bg-tertiary);
           box-shadow: inset 0 0 15px rgba(139, 92, 246, 0.05);
         }
 
         .sidebar-link.active {
-          color: white;
+          color: #ffffff;
           background: var(--primary-600);
           box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
         }
@@ -349,7 +349,7 @@ export default function Sidebar() {
         .sidebar-footer {
           padding: 16px;
           margin-top: auto;
-          border-top: 1px solid rgba(255, 255, 255, 0.03);
+          border-top: 1px solid var(--border-color);
           display: flex;
           flex-direction: column;
           gap: 12px;
@@ -361,7 +361,7 @@ export default function Sidebar() {
           gap: 12px;
           padding: 8px;
           border-radius: var(--radius-md);
-          background: rgba(255, 255, 255, 0.02);
+          background: var(--bg-tertiary);
         }
 
         .sidebar-user-info {
@@ -383,14 +383,14 @@ export default function Sidebar() {
         }
 
         .sidebar-user-name {
-          color: rgba(255,255,255,0.9);
+          color: var(--text-primary);
           font-size: 13px;
           font-weight: 600;
           white-space: nowrap;
         }
 
         .sidebar-user-role {
-          color: rgba(255,255,255,0.4);
+          color: var(--text-muted);
           font-size: 11px;
           text-transform: capitalize;
         }

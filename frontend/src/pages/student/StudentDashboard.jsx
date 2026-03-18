@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { BarChart3, TrendingUp, Calendar, BookOpen, Bell, ClipboardList, Loader2 } from 'lucide-react';
+import { BarChart3, TrendingUp, Calendar, BookOpen, Bell, ClipboardList, Loader2, Users } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { attendanceAPI, marksAPI, announcementAPI } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } } };

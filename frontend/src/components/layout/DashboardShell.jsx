@@ -85,7 +85,7 @@ export default function DashboardShell() {
           font-family: 'Poppins', sans-serif;
           font-size: 28px;
           font-weight: 700;
-          color: white;
+          color: var(--text-primary);
           letter-spacing: -0.02em;
           margin-bottom: 8px;
         }

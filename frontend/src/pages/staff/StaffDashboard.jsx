@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, ClipboardList, FileText, Users, Bell, TrendingUp, Calendar, Loader2, Award, Star, Building2 } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, ClipboardList, FileText, Users, Bell, TrendingUp, Calendar, Loader2, Award, Star, Building2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { staffAPI, marksAPI } from '../../services/api';
 

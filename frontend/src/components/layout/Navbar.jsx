@@ -163,7 +163,7 @@ export default function Navbar() {
           font-family: 'Poppins', sans-serif;
           font-size: 22px;
           font-weight: 700;
-          color: white;
+          color: var(--text-primary);
         }
 
         .navbar-title span {
