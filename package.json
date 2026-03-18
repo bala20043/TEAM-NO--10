@@ -1,12 +1,10 @@
 {
-    "name": "smartcms-root",
-    "version": "1.0.0",
-    "private": true,
-    "scripts": {
-        "dev": "cd frontend && npm run dev",
-        "install:all": "npm install && cd frontend && npm install"
-    },
-    "devDependencies": {
-        "concurrently": "^8.2.2"
-    }
+  "name": "smartcms-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "install:all": "npm install && cd frontend && npm install"
+  }
 }
