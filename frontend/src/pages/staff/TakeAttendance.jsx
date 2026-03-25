@@ -17,6 +17,7 @@ export default function TakeAttendance() {
     const [loading, setLoading] = useState(false);
     const [saved, setSaved] = useState(false);
     const [apiError, setApiError] = useState('');
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const isClassTeacher = !!(user?.department_id && user?.year);
 
@@ -48,10 +49,11 @@ export default function TakeAttendance() {
 
             if (studentRes.students) {
                 const combined = studentRes.students.map(s => {
-                    const status = attendanceRes.students?.find(a => a.student_id === s.id)?.status;
+                    const status = attendanceRes.records?.find(a => a.student_id === s.id)?.status;
                     return { ...s, status: status || null };
                 });
                 setStudents(combined);
+                setIsEditMode(attendanceRes.records?.length > 0);
             }
         } catch (err) {
             setApiError('Failed to fetch students');
@@ -97,9 +99,17 @@ export default function TakeAttendance() {
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="show">
-            <motion.div variants={itemVariants}>
-                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800 }}>Take Attendance</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Mark student attendance by department and year</p>
+            <motion.div variants={itemVariants} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800 }}>Take Attendance</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>Mark student attendance by department and year</p>
+                </div>
+                {isEditMode && (
+                    <div className="badge badge-warning" style={{ fontSize: '12px', padding: '6px 12px' }}>
+                        <Calendar size={14} style={{ marginRight: '6px' }} />
+                        Edit Mode: Attendance already marked
+                    </div>
+                )}
             </motion.div>
 
             {/* Filters */}
@@ -192,7 +202,7 @@ export default function TakeAttendance() {
             <motion.div variants={itemVariants} style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
                 <motion.button className="btn btn-primary btn-lg" onClick={handleSave} disabled={loading} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                     {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                    Save Attendance
+                    {isEditMode ? 'Update Attendance' : 'Save Attendance'}
                 </motion.button>
             </motion.div>
 

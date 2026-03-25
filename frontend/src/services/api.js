@@ -402,12 +402,16 @@ export const attendanceAPI = {
         if (error) throw error;
         return { records: data };
     },
-    getByDept: async (deptId, date) => {
+    getByDept: async (deptId, date, year) => {
         // Complex query: get students in dept, then their attendance for date
-        const { data: students, error: studentError } = await supabase
+        let query = supabase
             .from('students')
             .select('id')
             .eq('department_id', deptId);
+        
+        if (year) query = query.eq('year', year);
+
+        const { data: students, error: studentError } = await query;
         if (studentError) throw studentError;
 
         const studentIds = students.map(s => s.id);
@@ -419,7 +423,7 @@ export const attendanceAPI = {
         if (error) throw error;
         return { records: data };
     },
-    getDeptAttendance: async (deptId, date, year) => attendanceAPI.getByDept(deptId, date), // Simplified
+    getDeptAttendance: async (deptId, date, year) => attendanceAPI.getByDept(deptId, date, year),
     getMyAttendance: async () => {
         const { profile } = await studentAPI.getProfile();
         const { data: records, error } = await supabase.from('attendance').select('*').eq('student_id', profile.id);
