@@ -1,3 +1,0 @@
---- LIVE DATABASE CHECK ---
-STUDENT BALA: status is "pending"
-TOTAL ACTIVE STUDENTS IN DB: 0
