@@ -306,16 +306,19 @@ export default function ManageStaff() {
                                         <option value="principal">Principal</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="input-label">Department</label>
-                                    <select className="input-field" value={newStaff.department_id}
-                                        onChange={(e) => setNewStaff({ ...newStaff, department_id: e.target.value })} required>
-                                        <option value="">Select Department</option>
-                                        {departments.map(d => (
-                                            <option key={d.id} value={d.id}>{d.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                {newStaff.role !== 'principal' && (
+                                    <div>
+                                        <label className="input-label">Department</label>
+                                        <select className="input-field" value={newStaff.department_id}
+                                            onChange={(e) => setNewStaff({ ...newStaff, department_id: e.target.value })} 
+                                            required={newStaff.role !== 'principal'}>
+                                            <option value="">Select Department</option>
+                                            {departments.map(d => (
+                                                <option key={d.id} value={d.id}>{d.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
                                 {newStaff.role === 'staff' && (
                                     <div>
                                         <label className="input-label">Assign Year (Class Teacher)</label>
