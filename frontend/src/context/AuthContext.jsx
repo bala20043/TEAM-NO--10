@@ -86,21 +86,26 @@ export function AuthProvider({ children }) {
                 
                 // New: Approval Check for Students
                 if (formattedUser.role === 'student') {
-                    const { data: student } = await supabase
+                    const { data: student, error: studentErr } = await supabase
                         .from('students')
-                        .select('status')
-                        .eq('user_id', formattedUser.id)
+                        .select('status, year')
+                        .eq('user_id', data.id)
                         .maybeSingle();
                     
-                    if (student?.status === 'pending') {
-                        console.warn('Student login blocked: Status pending');
-                        setUser(null);
-                        await supabase.auth.signOut();
-                        return; // Halt profile setup
+                    if (student) {
+                        formattedUser.status = student.status;
+                        formattedUser.year = student.year;
+
+                        if (student.status === 'pending') {
+                            console.warn('Student login blocked: Status pending');
+                            setUser(null);
+                            await supabase.auth.signOut();
+                            return; 
+                        }
                     }
                 }
 
-                console.log('Setting user state:', formattedUser?.role);
+                console.log('Setting user state:', formattedUser?.role, 'Year:', formattedUser?.year);
                 setUser(formattedUser);
             } else {
                 setUser(null);

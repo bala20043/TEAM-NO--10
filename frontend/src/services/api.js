@@ -8,7 +8,7 @@ const getCurrentUserId = async () => {
     // 1. Try matching by auth UUID
     let { data: user, error } = await supabase
         .from('users')
-        .select('id, role, department_id, year')
+        .select('id, role, department_id')
         .eq('auth_id', session.user.id)
         .maybeSingle();
 
@@ -17,7 +17,7 @@ const getCurrentUserId = async () => {
         console.log('API: Profile match failed, link by email fallback...', session.user.email);
         const { data: emailMatch } = await supabase
             .from('users')
-            .select('id, role')
+            .select('id, role, department_id')
             .eq('email', session.user.email)
             .maybeSingle();
 
@@ -27,7 +27,7 @@ const getCurrentUserId = async () => {
                 .from('users')
                 .update({ auth_id: session.user.id })
                 .eq('id', emailMatch.id)
-                .select('id, role, department_id, year')
+                .select('id, role, department_id')
                 .single();
             user = linked;
         }
@@ -66,51 +66,24 @@ export const authAPI = {
         return { success: true, data };
     },
     register: async (userData) => {
-        // 0. Check if reg_no is unique
-        const { data: existingStudent } = await supabase
-            .from('students')
-            .select('id')
-            .eq('reg_no', userData.reg_no)
-            .maybeSingle();
-        
-        if (existingStudent) {
-            return { success: false, error: 'Registration number already exists.' };
-        }
-
-        // 1. Create auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        // Since we implemented the 'on_auth_user_created' trigger in Supabase,
+        // we only need to call signUp with the metadata. The trigger handles the rest.
+        const { data, error } = await supabase.auth.signUp({
             email: userData.email,
             password: userData.password,
+            options: {
+                data: {
+                    name: userData.name,
+                    role: 'student',
+                    reg_no: userData.reg_no,
+                    department_id: userData.department_id,
+                    year: userData.year,
+                    batch: userData.batch
+                }
+            }
         });
-        if (authError) throw authError;
-
-        // 2. Create user profile (student role)
-        const { data: userProfile, error: profileError } = await supabase
-            .from('users')
-            .insert({
-                auth_id: authData.user.id,
-                name: userData.name,
-                email: userData.email,
-                role: 'student',
-                department_id: userData.department_id
-            })
-            .select('id')
-            .single();
-        if (profileError) throw profileError;
-
-        // 3. Create student record
-        const { error: studentError } = await supabase
-            .from('students')
-            .insert({
-                user_id: userProfile.id,
-                reg_no: userData.reg_no,
-                department_id: userData.department_id,
-                year: userData.year,
-                batch: userData.batch,
-                status: 'pending' // Require admin approval
-            });
-        if (studentError) throw studentError;
-
+        
+        if (error) return { success: false, error: error.message };
         return { success: true };
     },
     refreshToken: () => { /* Handled automatically by Supabase SDK */ },
@@ -119,20 +92,9 @@ export const authAPI = {
 // Admin
 export const adminAPI = {
     getStats: async () => {
-        const [{ count: teachers }, { count: students }, { count: departments }, { count: pending }] = await Promise.all([
-            supabase.from('users').select('*', { count: 'exact', head: true }).in('role', ['staff', 'hod']),
-            supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-            supabase.from('departments').select('*', { count: 'exact', head: true }),
-            supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'pending')
-        ]);
-
-        return { 
-            totalStaff: teachers, 
-            totalStudents: students, 
-            totalDepartments: departments, 
-            pendingApprovals: pending || 0,
-            attendanceRate: 0 
-        };
+        const { data, error } = await supabase.rpc('get_admin_stats');
+        if (error) throw error;
+        return data;
     },
     createUser: async (userData) => {
         try {
@@ -339,7 +301,7 @@ export const studentAPI = {
             .eq('user_id', currentUser.id)
             .single();
         if (error) throw error;
-        return { profile: { ...data, name: data.users.name, email: data.users.email } };
+        return { profile: { ...data, name: data.users?.name, email: data.users?.email, department_name: data.departments?.name } };
     },
     archive: async (id) => {
         const { error } = await supabase.from('students').update({ status: 'archived' }).eq('id', id);
@@ -351,39 +313,9 @@ export const studentAPI = {
 // Staff Stats
 export const staffAPI = {
     getStats: async () => {
-        const user = await getCurrentUserId();
-        const isPrincipal = user.role === 'principal';
-        const isHOD = user.role === 'hod';
-
-        // Always get total college strength
-        const { count: collegeTotal } = await supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active');
-
-        if (isPrincipal) {
-            const [{ count: staff }, { count: depts }, { data: att }] = await Promise.all([
-                supabase.from('users').select('*', { count: 'exact', head: true }).in('role', ['staff', 'hod']),
-                supabase.from('departments').select('*', { count: 'exact', head: true }),
-                supabase.from('attendance').select('status').eq('date', new Date().toISOString().split('T')[0])
-            ]);
-            const present = att?.filter(a => a.status === 'present').length || 0;
-            const attPerc = att?.length > 0 ? Math.round((present / att.length) * 100) : 0;
-            return { isPrincipal: true, totalStudents: collegeTotal, totalStaff: staff, totalDepts: depts, todayAttendance: `${attPerc}%` };
-        }
-
-        if (isHOD) {
-            const [{ count: deptStudents }, { count: ann }] = await Promise.all([
-                supabase.from('students').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id).eq('status', 'active'),
-                supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id)
-            ]);
-            return { isHOD: true, totalStudents: collegeTotal, deptStudents: deptStudents, announcements: ann, year2Attendance: '0%', year3Attendance: '0%' };
-        }
-
-        // Regular Staff
-        const [{ count: classStudents }, { count: marks }, { count: ann }] = await Promise.all([
-            supabase.from('students').select('*', { count: 'exact', head: true }).eq('department_id', user.department_id).eq('year', user.year).eq('status', 'active'),
-            supabase.from('marks').select('*', { count: 'exact', head: true }).eq('uploaded_by', user.id),
-            supabase.from('announcements').select('*', { count: 'exact', head: true }).or(`department_id.eq.${user.department_id},type.eq.college`)
-        ]);
-        return { totalStudents: collegeTotal, classStudents: classStudents, todayAttendance: '0%', pendingMarks: marks, announcements: ann };
+        const { data, error } = await supabase.rpc('get_staff_stats');
+        if (error) throw error;
+        return data;
     },
 };
 
@@ -474,7 +406,7 @@ export const marksAPI = {
         if (error) throw error;
         return { marks };
     },
-    getDeptMarks: async (deptId, year, examType) => {
+    getDeptMarks: async (deptId, year) => {
         const { data, error } = await supabase.from('marks').select('*, students!inner(department_id, year)');
         if (error) throw error;
         return { marks: data };
